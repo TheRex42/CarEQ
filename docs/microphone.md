@@ -33,9 +33,62 @@ There is no full-band third-party measurement of this microphone.
 - **Audio Science Review, RTINGS, Julian Krause**: no SoloCast measurement
   found.
 
+## Cross-check against a Pixel 11 (2026-09-13)
+
+Two recordings of the same sweep in the car, one per microphone, as a free
+test of whether the SoloCast's unknown treble is a real problem. Both are
+genuinely in the car: each shows the +11 to +13.5 dB cabin hump at 80 Hz,
+the 160 Hz dip, and a 25 ms decay. Plot and data in `results/mic/`.
+
+| | phone minus SoloCast |
+|---|---|
+| 40-120 Hz | 2.1 dB rms |
+| 120 Hz-2.5 kHz | 2.5-3.2 dB rms |
+| 4-8 kHz | +4.6 dB mean |
+| 8-12.5 kHz | +15.3 dB mean |
+| 12.5-16 kHz | +20.3 dB mean |
+
+Below 2.5 kHz the two agree to within a few dB, and that residue is
+narrow-band ripple of the shape position differences produce, not a smooth
+offset. Neither microphone has a gross midrange error.
+
+Above 2.5 kHz they diverge enormously, peaking at +21 dB near 12.5 kHz.
+**The phone is the one that is wrong**, on three independent grounds:
+
+1. A car cabin cannot rise 12 dB at 10-16 kHz. Seats, carpet and headliner
+   absorb strongly up there and tweeters roll off; the phone's curve is
+   acoustically impossible, the SoloCast's gentle decline is not.
+2. The phone's *noise floor* rises over the same range, from -104 dBFS at
+   8 kHz to -96 at 16 kHz, while the SoloCast's falls to -114. A capsule
+   resonance boosts the ambient noise and the sweep equally, which is what
+   is seen. A recording-chain low-pass on the SoloCast would not explain the
+   phone's rising noise.
+3. This SoloCast recording tracks the 18-recording pooled car baseline to
+   within 3 to 6 dB above 6 kHz, ordinary single-position variation, while
+   the phone departs from it by 12 to 13 dB.
+
+The shape is a broad hump centred near 12.5 kHz: the classic acoustic
+resonance of a tiny MEMS capsule in a ported phone body, probably with
+recorder-side processing on top, since +21 dB is large for the capsule
+alone.
+
+**What this does and does not establish.** It eliminates the phone as a
+reference and shows the SoloCast is the better of the two by a wide margin.
+It does *not* calibrate the SoloCast: two unknowns, one now known to be
+badly behaved, still leaves the other unmeasured. The SoloCast's in-car
+curve is smooth and physically plausible, so the treble bands are unlikely
+to be wildly wrong, but a few dB of unknown remains above 4 kHz.
+
+It also settles a Phase 2 question in advance: an Android app using the
+phone's internal microphone **cannot** work without a calibration file. A
+20 dB error in the top octave would drive the fit to cut bands 11-13 to the
+rail.
+
 ## Decision
 
-No mic calibration is applied for now. Between 50 Hz and 4 kHz the one
+No mic calibration is applied for now (unchanged by the Pixel cross-check
+above, which ruled the phone out as a reference rather than vouching for the
+SoloCast). Between 50 Hz and 4 kHz the one
 measurement that exists says the mic is flat to +-2 dB, which is at the
 level of the method's own between-file noise. Below 50 Hz and above 4 kHz
 there is no data at all, and a calibration invented from a watermarked
