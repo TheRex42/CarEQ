@@ -1,0 +1,13 @@
+{
+  "type": "careq-stimulus",
+  "fs": 48000,
+  "f1": 20.0,
+  "f2": 20000.0,
+  "duration": 10.0,
+  "level_dbfs": -12.0,
+  "pre_silence": 1.0,
+  "post_silence": 2.0,
+  "repeats": 3,
+  "fade_in": 0.1,
+  "fade_out": 0.005
+}
