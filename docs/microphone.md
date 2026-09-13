@@ -146,6 +146,31 @@ What this means for the fit:
   high-pass in the chain; the SoundGuys chart shows none down to 50 Hz, so
   if it exists it is below 50 Hz and mostly outside the fit's weight.
 
+## Upgrade path when an omni reference arrives
+
+Decided 2026-09-13: future runs use an omnidirectional measurement
+microphone. Pattern matters more than the unknown response curve. In a car,
+sound arrives from door woofers, dash tweeters, rear speakers and
+reflections at many angles; a cardioid weights those differently from an
+ear, and differently at 10 kHz than at 1 kHz because its pattern narrows
+with frequency. No single calibration curve fixes a directivity error,
+because the error depends on the direction of arrival, not only on
+frequency. Measurement microphones are omni by design for this reason, and
+all three candidates below are omni.
+
+Nothing already measured is invalidated:
+
+- `results/session3/eq_model.json` is built from ratios through one
+  microphone and is microphone-independent. It stands as it is.
+- Only the tuning baseline needs redoing: nine recordings, about ten
+  minutes, then refit against the same targets with `--mic-cal`.
+- The settings that should move are bands 11-13. Everything below 4 kHz is
+  already agreed between two microphones to within position scatter.
+
+Keep the current settings in the car meanwhile. They were verified by
+measurement and the treble bands sit at 0 to -1, so any microphone error up
+there has had little influence on them.
+
 ## How to get a real calibration
 
 Any of these beats searching further:
