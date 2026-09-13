@@ -72,6 +72,47 @@ resonance of a tiny MEMS capsule in a ported phone body, probably with
 recorder-side processing on top, since +21 dB is large for the capsule
 alone.
 
+### Is it automatic gain control, or a fixed filter?
+
+A resonance is a fixed linear filter; a gain control is time-varying, and
+time-varying gain leaves fingerprints a resonance cannot. Three tests, all
+negative:
+
+1. **Noise floor through the 2 s gaps between sweeps.** A gain control
+   recovering during silence makes the floor swell. The phone's floor above
+   8 kHz is flat to 0.4 dB across both gaps (-69.8 to -70.1 dBFS). The
+   broadband floor wanders 4 dB in both directions, but so does the
+   SoloCast's: that is passing traffic, not the recorder.
+2. **Sweep-to-sweep agreement.** Gain state depends on history, and sweep 1
+   is preceded by 1 s of silence against 2 s for sweeps 2 and 3. The phone's
+   three sweeps agree within 0.17 dB at every frequency including 10 and
+   14 kHz, and are *more* consistent than the SoloCast's (0.48 dB).
+3. **Envelope dynamic range.** Compression squashes the loud bass hump and
+   lifts the quiet treble. The phone's sweep envelope spans 35.2 dB against
+   the SoloCast's 31.9, and the phone does not pull the bass hump down at
+   all. The range is wider, not narrower: the opposite of compression.
+
+So the phone's HF excess is a fixed linear filter, whether that is the
+capsule's port resonance, the recorder's processing, or both. For
+correction purposes it does not matter which, since a fixed linear error is
+exactly what a calibration file removes. It matters only for durability: a
+capsule resonance is permanent, app processing can change with a settings
+or version change, so pin both before calibrating a phone.
+
+### How much of the gap is the phone?
+
+Not all of it. This SoloCast recording is also 3.5 dB below the
+18-recording pooled baseline at 10 kHz and 6.4 dB below it at 16 kHz, far
+more than the usual single-position scatter. The SoloCast is cardioid, and
+a cardioid's high end falls away off-axis, so a headrest clip pointing
+somewhere other than at the speakers loses treble that an omnidirectional
+phone capsule keeps.
+
+Measured against the pooled car baseline instead of against this one file,
+the phone runs about +13 dB hot at 10 to 16 kHz, and this particular
+SoloCast placement accounts for the remaining 5 to 8 dB of the headline
+gap. Both effects are real. The phone's is much the larger.
+
 **What this does and does not establish.** It eliminates the phone as a
 reference and shows the SoloCast is the better of the two by a wide margin.
 It does *not* calibrate the SoloCast: two unknowns, one now known to be
