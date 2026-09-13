@@ -7,9 +7,12 @@
 2. Phone recorder app: mono WAV, 48 kHz preferred (44.1 kHz is resampled),
    16 or 24 bit, **audio source "unprocessed" or "voice recognition"**, all
    automatic gain control / noise suppression / limiter OFF, fixed gain. Check
-   the app cannot change gain between recordings. Examples: RecForge II
-   (source: Unprocessed), Easy Voice Recorder Pro (source: Unprocessed),
-   Audio Recorder by Sony. Any recorder works if its gain is fixed.
+   the app cannot change gain between recordings.
+   Chosen app: **RecForge II** - Settings: format WAV, 48000 Hz, mono, audio
+   source Unprocessed (else Voice recognition), gain/normalize off. Make a
+   10 s test recording first and confirm it is WAV, mono, not silent.
+   Transfer files by cable or file sync, never through messaging apps (they
+   re-encode audio).
 3. Head unit: Sound adjustment mode = Advanced, Bass / Treble = 0, Fader and
    Balance centred, listening position "Driver's seat" or "All seats" (pick
    one and keep it), ALC off, Automatic source level adjustment off.
@@ -17,12 +20,19 @@
    Equalizer: Customize EQ, all 13 sliders at 0 -> that is the baseline.
 4. Volume: loud enough that the sweep is well above cabin noise but the
    recording never clips. Aim for peaks around -6 dBFS in the recorder's
-   meter during the sweep. Note the volume number and never change it
-   during a session. Engine off, doors closed, HVAC off, phone silent.
-5. Phone position: at the driver's head position, mic pointing up or toward
-   the windshield, held by a stand or a rolled towel on the headrest. Do not
-   hold it by hand. The phone must not move between the baseline and the
-   band recordings of one identification session.
+   meter during the sweep (middle to upper third of the meter). Note the
+   volume number and never change it during a session.
+   **Engine off, ignition in accessory mode**, HVAC fan off, doors closed,
+   phone silent. If battery is a worry, run the engine for a minute between
+   blocks of recordings, then switch it off again before recording.
+5. Phone position for identification: **empty driver's seat**, phone on a
+   tripod / clamp holder on the headrest post (or wedged upright against
+   the headrest with a towel) at ear height, mic end up, nothing within a
+   few cm of the mic. Do not hold it by hand and do not sit in the seat.
+   Occupancy does not matter here because every band is a ratio to the
+   baseline; what matters is that the phone does not move at all between
+   the baseline and the band recordings. If it gets bumped, record a new
+   baseline and continue from there.
 
 ## Identification session (once per car, ~20 minutes)
 
@@ -73,8 +83,15 @@ band should show a single clear peak near its label with a similar dB/step;
 
 ## Tuning (repeatable)
 
-Multi-position baseline: all bands 0, record at 5-7 positions around the
-driver's head (+-15 cm left/right/forward/back/up/down). Pool them:
+Multi-position baseline, **occupied seat**: sit in the driver's seat in
+normal posture, all bands 0, hold the phone at ear height 10-20 cm from
+the head, mic up, and record at 5-7 spots (left ear, right ear, slightly
+forward, back, higher, lower). Same volume and recorder gain as the
+identification session. `careq fit` power-averages all positions (never
+the raw waveforms), so position-specific ripple flattens out and only
+features common to all positions get corrected. Record a position twice to
+weight it more. Do not strap the phone to your head: the target curves
+assume a mic at the listening position, not at the ear.
 
 ```
 careq fit --measurement pos1.wav --more pos2.wav pos3.wav ... \
@@ -92,3 +109,32 @@ compare with the CSV at 1/3-octave smoothing; they should agree within ~1 dB.
 Alternatively measure with REW's own sweep played from the same USB stick and
 compare its exported response with `careq measure` of a recording made in
 the same position.
+
+## Target curve
+
+`harman_car` (default) is HouseCurve's "Car B", a JBL-derived car curve
+(+6 dB shelf below 40 Hz, +1 dB at 250 Hz, 0 at 2 kHz, -5 dB at 20 kHz),
+used as a stand-in for Harman's in-car preference research, which has no
+single published file. It is a placeholder. The owner prefers flat mids with a
+slight bass shelf; that is a four-line file, e.g.
+
+```
+frequency,raw
+20,3
+80,3
+200,0
+20000,0
+```
+
+(add a point like `2000,0` / `20000,-3` for a gentle treble tilt), passed as
+`careq fit --target mycurve.csv`. Re-running the fit against several targets
+needs no new recordings.
+
+## What EQ can and cannot fix
+
+The fit corrects everything in the averaged baseline that a ~1-octave-wide
+band can reach: cabin gain, the main bass mode, panel resonances, tilt.
+Cabin modes narrower than a band are only partially reduced; nulls from
+cancellation are not filled (boosting into them wastes headroom), and the
+plot shows a band pinned at +9 when the fit is trying - cap it with
+`--max-step` or adjust the weights (`--w-lo`, `--w-hi`, `--fmin`, `--fmax`).
