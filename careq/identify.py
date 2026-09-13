@@ -12,8 +12,9 @@ Bins where the baseline sits in a deep null get down-weighted because their
 ratio is dominated by noise.
 
 Optional extra runs (same band at -9, or at +3) are turned into symmetry and
-linearity checks and stored in the model's notes. The fit assumes
-``gain_db(f) = steps * per_step_db(f)`` unless those checks say otherwise.
+linearity checks and stored in the model's notes; a -9 run also yields
+``notes["cut_factor"]``, the depth of a cut relative to the same boost,
+which the fit uses (0.93 on the Mazda 3; cuts are slightly shallower).
 
 The model is written to ``eq_model.json``.
 """
@@ -30,9 +31,10 @@ from .biquad import peaking_magnitude_db
 from .measure import LOG_GRID, EPS, Measurement, Response, frac_octave_average
 
 N_BANDS_DEFAULT = 13
-# Slider labels only; the shapes are measured. Verify against the head unit
-# screen -- these are a guess for the 2019+ Mazda Connect 13-band EQ.
-DEFAULT_LABELS_HZ = [40, 63, 100, 160, 250, 400, 630, 1000, 1600, 2500, 4000, 6300, 10000]
+# Slider labels only; the shapes are measured. Band centres measured on a
+# 2021 Mazda 3 (2026-09-13): 41, 60, 102, 169, 253, 506, 968, 1600, 2510,
+# 4040, 5620, 10200, 15700 Hz, i.e. NOT a 1/3-octave ladder.
+DEFAULT_LABELS_HZ = [40, 63, 100, 160, 250, 500, 1000, 1600, 2500, 4000, 6300, 10000, 16000]
 
 
 def basis_from_measurements(band: Measurement, baseline: Measurement, frac: float = 3.0,
@@ -152,14 +154,31 @@ def _rms(x: np.ndarray, freq: np.ndarray, f_lo: float, f_hi: float) -> float:
     return float(np.sqrt(np.mean(x[m] ** 2)))
 
 
+def far_field_offset_db(basis: np.ndarray, freq: np.ndarray = LOG_GRID, f_lo: float = 40.0, f_hi: float = 16000.0,
+                        exclude_octaves: float = 1.5) -> float:
+    """Median of a basis more than ``exclude_octaves`` away from its peak: the
+    broadband level difference between the band recording and the baseline,
+    which one band cannot have caused (volume, recorder gain, the car's slow
+    level drift)."""
+    m = (freq >= f_lo) & (freq <= f_hi)
+    f_pk = freq[m][int(np.argmax(np.abs(basis[m])))]
+    far = m & (np.abs(np.log2(freq / f_pk)) > exclude_octaves)
+    return float(np.median(basis[far])) if far.sum() >= 10 else level_offset_db(basis, freq, f_lo, f_hi)
+
+
 def identify(baseline: Measurement, runs: list[tuple[int, int, Measurement]], n_bands: int = N_BANDS_DEFAULT,
              labels_hz: list[float] | None = None, frac: float = 3.0,
-             check_range: tuple[float, float] = (40.0, 16000.0), level_warn_db: float = 0.75) -> EqModel:
+             check_range: tuple[float, float] = (40.0, 16000.0), level_warn_db: float = 0.75,
+             level_correct: bool = True) -> EqModel:
     """Build an :class:`EqModel` from a baseline and per-band runs.
 
     ``runs`` is a list of (band_index, steps, measurement). For every band the
     run with the largest |steps| becomes the basis; other runs become
-    symmetry/linearity checks.
+    symmetry/linearity checks. With ``level_correct`` (default) the broadband
+    level difference between each run and the baseline, measured away from the
+    band's peak, is subtracted: one band cannot change the whole spectrum, so
+    that difference is the car's level drift or a gain change, and left in it
+    would make the fit believe the band lifts everything.
     """
     labels = labels_hz if labels_hz is not None else (DEFAULT_LABELS_HZ if n_bands == N_BANDS_DEFAULT else [None] * n_bands)
     by_band: dict[int, list[tuple[int, Measurement]]] = {}
@@ -172,7 +191,7 @@ def identify(baseline: Measurement, runs: list[tuple[int, int, Measurement]], n_
     missing = [i for i in range(n_bands) if i not in by_band]
 
     bands: list[Band] = []
-    sym_err, lin_err = [], []
+    sym_err, lin_err, cut_ratios = [], [], []
     level_warnings: list[int] = []
     for idx in range(n_bands):
         if idx in missing:
@@ -181,22 +200,39 @@ def identify(baseline: Measurement, runs: list[tuple[int, int, Measurement]], n_
         items = sorted(by_band[idx], key=lambda t: -abs(t[0]))
         steps0, m0 = items[0]
         basis = basis_from_measurements(m0, baseline, frac)
+        off = far_field_offset_db(basis)
+        if level_correct:
+            basis = basis - off
         band = Band(idx, labels[idx], steps0, basis)
-        off = level_offset_db(basis)
+        band.checks.append({"level_offset_db": round(off, 3), "removed": bool(level_correct)})
         if abs(off) > level_warn_db:
-            band.checks.append({"warning": f"level offset {off:+.2f} dB vs baseline - recorder gain changed (AGC?) "
-                                           f"or phone moved; basis not trusted"})
+            band.checks.append({"warning": f"level offset {off:+.2f} dB vs baseline - volume or recorder gain "
+                                           f"changed, or the mic moved; check the basis shape"})
             level_warnings.append(idx + 1)
         band.shape = fit_peaking(LOG_GRID, basis / steps0 * 9)
         per_step = basis / steps0
+        i_pk = int(np.argmax(np.abs(basis[(LOG_GRID >= check_range[0]) & (LOG_GRID <= check_range[1])])))
+        f_pk = LOG_GRID[(LOG_GRID >= check_range[0]) & (LOG_GRID <= check_range[1])][i_pk]
+        near = (LOG_GRID >= f_pk / 2) & (LOG_GRID <= f_pk * 2)
         for steps, m in items[1:]:
             other = basis_from_measurements(m, baseline, frac)
-            dev = other - per_step * steps
+            if level_correct:
+                other = other - far_field_offset_db(other)
+            pred = per_step * steps
+            dev = other - pred
             err = _rms(dev, LOG_GRID, *check_range)
             kind = "symmetry" if np.sign(steps) != np.sign(steps0) else "linearity"
-            band.checks.append({"steps": steps, "kind": kind, "rms_dev_db": round(err, 3),
-                                "max_dev_db": round(float(np.max(np.abs(dev[(LOG_GRID >= check_range[0]) & (LOG_GRID <= check_range[1])]))), 3)})
-            (sym_err if kind == "symmetry" else lin_err).append(err)
+            # least-squares scale of this run against the linear prediction, near the peak
+            ratio = float(np.sum(other[near] * pred[near]) / (np.sum(pred[near] ** 2) + EPS))
+            check = {"steps": steps, "kind": kind, "rms_dev_db": round(err, 3),
+                     "max_dev_db": round(float(np.max(np.abs(dev[(LOG_GRID >= check_range[0]) & (LOG_GRID <= check_range[1])]))), 3),
+                     "ratio_to_linear": round(ratio, 3)}
+            band.checks.append(check)
+            if kind == "symmetry":
+                sym_err.append(err)
+                cut_ratios.append(ratio)
+            else:
+                lin_err.append(err)
         bands.append(band)
 
     notes: dict = {"smoothing": f"1/{frac:g} octave", "check_range_hz": list(check_range)}
@@ -207,6 +243,8 @@ def identify(baseline: Measurement, runs: list[tuple[int, int, Measurement]], n_
     if sym_err:
         notes["symmetry_rms_db"] = round(float(np.mean(sym_err)), 3)
         notes["symmetry_ok"] = bool(max(sym_err) < 0.75)
+        # gain of a cut relative to the same boost (fit uses this); 0.93 on the Mazda 3
+        notes["cut_factor"] = round(float(np.mean(cut_ratios)), 3)
     if lin_err:
         notes["linearity_rms_db"] = round(float(np.mean(lin_err)), 3)
         notes["linearity_ok"] = bool(max(lin_err) < 0.75)

@@ -1,0 +1,9 @@
+# Warm: +5 dB bass shelf to 100 Hz, flat 250 Hz-1 kHz, then a Harman-style
+# downward slope to -5 dB at 20 kHz. Halfway between neutral and Car B.
+frequency,raw
+20,5
+100,5
+250,0
+1000,0
+4000,-1.5
+20000,-5

@@ -1,0 +1,8 @@
+# The owner's Mazda 3 voicings (2026-09-13). Neutral: flat mids, +3 dB bass
+# shelf below 80 Hz, gentle -2 dB tilt to 20 kHz. Validated in the car.
+frequency,raw
+20,3
+80,3
+200,0
+2000,0
+20000,-2

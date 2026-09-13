@@ -63,7 +63,7 @@ Write a manifest (paths relative to the manifest file):
     {"band": 4, "steps": -9, "files": ["band04_m9.wav"]},
     {"band": 4, "steps": 3, "files": ["band04_p3.wav"]}
   ],
-  "labels_hz": [40, 63, 100, 160, 250, 400, 630, 1000, 1600, 2500, 4000, 6300, 10000]
+  "labels_hz": [40, 63, 100, 160, 250, 500, 1000, 1600, 2500, 4000, 6300, 10000, 16000]
 }
 ```
 

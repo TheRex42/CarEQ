@@ -7,4 +7,5 @@ build/
 dist/
 out/
 recordings/
+Recordings/
 *.npz

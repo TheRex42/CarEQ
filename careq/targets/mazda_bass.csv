@@ -1,0 +1,9 @@
+# Bass-forward: +7 dB below 60 Hz sliding to 0 at 250 Hz, flat mids, flat
+# treble. Meets the cabin's 80 Hz hump partway instead of fighting it; the
+# fit still cuts bands 2-3 fully, but lands within 2 dB of target there.
+frequency,raw
+20,7
+60,7
+250,0
+2000,0
+20000,-1

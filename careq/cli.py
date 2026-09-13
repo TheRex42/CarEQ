@@ -11,7 +11,7 @@ import numpy as np
 from .signals import SweepSpec, generate
 from .measure import (LOG_GRID, MeasureOptions, Measurement, Response, measure_files, apply_mic_cal)
 from .identify import identify, EqModel, DEFAULT_LABELS_HZ, N_BANDS_DEFAULT
-from .fit import fit_eq, load_target, list_targets, plot_fit, default_weights
+from .fit import fit_eq, load_target, list_targets, plot_fit, default_weights, DEFAULT_GAIN_SCALE
 
 
 def _load_spec(args, manifest: dict | None = None, base: Path | None = None) -> SweepSpec:
@@ -147,7 +147,8 @@ def cmd_identify(args) -> int:
         m = measure_files(files, spec, opts)
         _print_sweep_diag(m, args.smooth)
         runs.append((band, steps, m))
-    model = identify(baseline, runs, n_bands=args.n_bands, labels_hz=labels, frac=args.smooth)
+    model = identify(baseline, runs, n_bands=args.n_bands, labels_hz=labels, frac=args.smooth,
+                     level_correct=not args.no_level_correct)
     model.save(args.out)
     print()
     print(model.describe())
@@ -197,7 +198,11 @@ def cmd_fit(args) -> int:
         baseline = apply_mic_cal(baseline, Response.from_csv(args.mic_cal))
     target = load_target(args.target)
     w = default_weights(model.freq, f_lo=args.w_lo, f_hi=args.w_hi, f_min=args.fmin, f_max=args.fmax)
-    result = fit_eq(baseline, model, target, weights=w, max_step=args.max_step)
+    current = _parse_current(args.current, model.n_bands)
+    if current is not None:
+        print("current settings: " + " ".join(f"{g:+d}" for g in current))
+    result = fit_eq(baseline, model, target, weights=w, max_step=args.max_step, max_boost=args.max_boost,
+                    current=current, gain_scale=args.gain_scale, cut_factor=args.cut_factor)
     print(result.summary())
     if args.out:
         Path(args.out).write_text(json.dumps(result.to_dict(), indent=1))
@@ -206,6 +211,22 @@ def cmd_fit(args) -> int:
         plot_fit(result, args.plot, f"target: {Path(args.target).stem}")
         print(f"wrote {args.plot}")
     return 0
+
+
+def _parse_current(text: str | None, n: int) -> np.ndarray | None:
+    """--current: 13 integers (comma/space separated) or a fit.json from a previous run."""
+    if not text:
+        return None
+    p = Path(text)
+    if p.exists():
+        d = json.loads(p.read_text())
+        vals = d["steps"] if isinstance(d, dict) else d
+    else:
+        vals = [int(v) for v in text.replace(",", " ").split()]
+    vals = [int(v) for v in vals]
+    if len(vals) != n:
+        raise SystemExit(f"--current needs {n} integers, got {len(vals)}")
+    return np.asarray(vals, dtype=int)
 
 
 def cmd_simulate(args) -> int:
@@ -232,7 +253,9 @@ def cmd_simulate(args) -> int:
                                         snr_db=args.snr, seed=200 + k), spec.fs)
         manifest["bands"].append({"band": k + 1, "steps": 9, "files": [name]})
     (out / "manifest.json").write_text(json.dumps(manifest, indent=1))
-    truth = {"fc": list(sc.eq.fc), "q": list(sc.eq.q), "db_per_step": list(sc.eq.db_per_step), "drift_ppm": args.drift_ppm}
+    truth = {"fc": list(sc.eq.fc), "q": list(sc.eq.q), "db_per_step": list(sc.eq.db_per_step),
+             "cut_factor": sc.eq.cut_factor, "limiter_knee_db": sc.eq.knee_db, "limiter_cap_db": sc.eq.cap_db,
+             "drift_ppm": args.drift_ppm}
     (out / "truth.json").write_text(json.dumps(truth, indent=1))
     print(f"wrote {1 + args.baseline_files + n} WAVs, manifest.json, stimulus.json and truth.json to {out}")
     print(f"next: careq identify --manifest {out / 'manifest.json'} --out {out / 'eq_model.json'} "
@@ -281,6 +304,8 @@ def build_parser() -> argparse.ArgumentParser:
     i.add_argument("--band", nargs="+", action="append", metavar="X",
                    help="BAND STEPS FILE [FILE...]  e.g. --band 4 +9 rec.wav (repeatable)")
     i.add_argument("--n-bands", type=int, default=N_BANDS_DEFAULT)
+    i.add_argument("--no-level-correct", action="store_true",
+                   help="keep each run's broadband level difference to the baseline in its basis")
     i.add_argument("--out", default="eq_model.json")
     i.add_argument("--baseline-csv", help="also write the baseline response CSV (input for 'fit')")
     i.add_argument("--plot")
@@ -293,6 +318,14 @@ def build_parser() -> argparse.ArgumentParser:
     f.add_argument("--target", default="harman_car", help="bundled target name or a file (see 'careq targets')")
     f.add_argument("--mic-cal")
     f.add_argument("--max-step", type=int, default=9)
+    f.add_argument("--max-boost", type=int, default=None,
+                   help="cap positive steps lower than --max-step (boosts cost head-unit headroom)")
+    f.add_argument("--current", help="settings the measurement was made with: 13 integers, or a previous "
+                                     "fit.json; the fit then returns the corrected absolute settings")
+    f.add_argument("--gain-scale", type=float, default=DEFAULT_GAIN_SCALE,
+                   help="fraction of the single-band gain delivered when several bands are set (0.95 with ALC off)")
+    f.add_argument("--cut-factor", type=float, default=None,
+                   help="depth of a cut relative to the same boost (default: from the model, else 0.93)")
     f.add_argument("--w-lo", type=float, default=60.0, help="full weight above this frequency")
     f.add_argument("--w-hi", type=float, default=12000.0, help="full weight below this frequency")
     f.add_argument("--fmin", type=float, default=30.0, help="weight reaches its floor (5%%) below this")

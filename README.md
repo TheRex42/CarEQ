@@ -14,7 +14,8 @@ band settings toward a target curve.
 .venv/bin/careq targets                         # bundled target curves
 ```
 
-See `docs/procedure.md` for the in-car recording procedure.
+See `docs/method.md` for what every stage does and how the Mazda 3 target
+was arrived at, and `docs/procedure.md` for the in-car recording procedure.
 
 ## Layout
 
@@ -46,9 +47,11 @@ octave on a log grid. A noise-only window of the same length gives a per-band
 SNR estimate.
 
 **Identification.** For band k at +9: `basis_k = 10 log10(P_k / P_baseline)`
-with both spectra 1/3-octave smoothed first. The phone must not move between
-baseline and band runs; a median level offset >0.75 dB flags a gain change
-(AGC) or a moved phone. Optional runs at -9 / +3 produce symmetry and
+with both spectra 1/3-octave smoothed first. The mic must not move between
+baseline and band runs. Each run's broadband level difference to the
+baseline (measured more than 1.5 octaves from the band's peak) is
+subtracted, since one band cannot move the whole spectrum; above 0.75 dB it
+is also flagged (`--no-level-correct` keeps it). Optional runs at -9 / +3 produce symmetry and
 linearity checks. The per-step curve is `basis_k / 9`; a peaking-filter fit
 of each basis is reported for sanity but not used.
 
@@ -56,17 +59,35 @@ of each basis is reported for sanity but not used.
 200 Hz-2 kHz. Weighted least squares with a free level offset and bounds +-9
 (`scipy.optimize.lsq_linear`), weights 1.0 over 60 Hz-12 kHz tapering to
 0.05 at 30 Hz / 16 kHz, then rounding and +-1 integer coordinate descent.
-Output: 13 integers, predicted residual, before / predicted / target plot.
+Each band's effect is `gain_scale * per_step * steps`, with cuts further
+scaled by `cut_factor`: with ALC off the Mazda delivers about 95 % of the
+single-band gain when adjacent bands are set together and cuts 7 %
+shallower than it boosts. `--max-boost` caps positive steps separately,
+because boosts spend the head unit's digital headroom (with ALC on, which
+adds ~6 dB, two bands at +9 hit its limiter). Output: 13 integers,
+predicted residual, before / predicted / target plot.
+
+**Iterate.** The linear model is good to about 5 % with ALC off and the
+2-4 kHz region varies +-1 dB between recordings, so one pass is approximate. Set the
+sliders, measure again, and run `careq fit --current fit.json` (or
+`--current "0 0 +3 ..."`) on the new recording: the fit then returns the
+corrected absolute settings and the change from the current ones.
 
 ## Status
 
-- 29 tests pass (`.venv/bin/python -m pytest`, ~1 min). On the synthetic
-  car, identified bases match the true filters within 0.5 dB, dB/step within
-  10 %, drift to <2 ppm, and the fit recovers >80 % of the error an oracle fit
-  with exact knowledge can remove.
-- Not yet validated against REW or real recordings.
-- The 13 band labels in `identify.py` (40 Hz ... 10 kHz) are a guess for the
-  Mazda Connect EQ and are labels only; every shape is measured.
+- 30 tests pass (`.venv/bin/python -m pytest`, ~1 min). On the synthetic
+  car (measured-like: Q~2 bands, 0.93 cut factor, soft gain limiter),
+  identified bases match the true filters within 0.5 dB, the cut factor
+  within 0.03, drift to <2 ppm; the first fit pass predicts the re-simulated
+  result within 1 dB rms, the second within 0.3 dB and the third within
+  0.1 dB (each pass refits from the measured result with `--current`).
+- Real recordings: three identification sessions on a 2021 Mazda 3
+  (2026-09-13) gave all 13 bands; the combined model is
+  `results/session3/eq_model.json` (see `docs/session3_results.md`; the
+  mic is discussed in `docs/microphone.md`). Not yet validated against REW;
+  no tuning pass yet.
+- Band labels: 40, 63, 100, 160, 250, 500, 1k, 1.6k, 2.5k, 4k, 6.3k, 10k,
+  16k Hz, from the measured centres. Labels only; every shape is measured.
 
 ## Reuse and attribution
 

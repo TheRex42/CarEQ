@@ -4,7 +4,7 @@ import numpy as np
 from careq.measure import LOG_GRID, Response
 from careq.identify import EqModel, Band
 from careq.biquad import peaking_magnitude_db
-from careq.fit import fit_eq, default_weights, weighted_rms
+from careq.fit import fit_eq, default_weights, weighted_rms, effective_steps
 
 
 def random_model(rng, n=13):
@@ -41,7 +41,7 @@ def test_integer_not_much_worse_than_continuous():
         A = model.per_step_matrix()
         w = default_weights(LOG_GRID)
         d = r.target.db - r.baseline.db
-        res = A @ np.round(r.steps_cont) - d
+        res = A @ effective_steps(np.round(r.steps_cont), r.gain_scale, r.cut_factor) - d
         naive = weighted_rms(res - np.sum(w * res) / np.sum(w), w)
         worst_vs_naive = max(worst_vs_naive, r.rms_int - naive)
         assert r.rms_int <= naive + 1e-9

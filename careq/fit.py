@@ -1,10 +1,29 @@
 """Fit integer band settings so that baseline + EQ approaches a target curve.
 
-error(f) = baseline(f) + sum_k g_k * per_step_k(f) + c - target(f)
+error(f) = measured(f) + sum_k per_step_k(f) * (e(x_k) - e(cur_k)) + c - target(f)
 
-``c`` is a free level offset (the EQ cannot change overall level, and level is
-arbitrary anyway). Bounded, weighted least squares gives the continuous
-solution; rounding plus integer coordinate descent repairs rounding damage.
+``x`` are the settings to find, ``cur`` the settings the measurement was made
+with (all zero for a flat-EQ baseline), ``c`` a free level offset (the EQ
+cannot change overall level, and level is arbitrary anyway) and
+
+    e(x) = gain_scale * (cut_factor if x < 0 else 1) * x
+
+the effective step count. ``gain_scale`` (default 0.95) is how much of the
+single-band gain the head unit delivers when several bands are set at once,
+``cut_factor`` (default 0.93, or the value identify measured) how deep a cut
+is relative to the same boost; both from the 2021 Mazda 3 sessions of
+2026-09-13 (with ALC off two adjacent bands at +9 reach 95-98 % of the sum
+of their single-band curves; with ALC on it was 84 %, see
+docs/session3_results.md). ``max_boost`` caps positive steps separately:
+boosts eat digital headroom in the head unit and can hit its limiter on
+loud material, so cuts are preferred where the fit has the choice. Bounded weighted least squares gives the continuous solution
+(re-solved until the signs, which pick the cut factor, are stable); rounding
+plus integer coordinate descent repairs rounding damage.
+
+Because the real unit does not superpose exactly, the first fit is an
+approximation: measure again with the fitted settings in place and refit
+with ``current=`` those settings (``careq fit --current``). The second pass
+corrects what the first one missed.
 """
 from __future__ import annotations
 
@@ -70,16 +89,28 @@ class FitResult:
     predicted_cont: Response
     predicted_int: Response
     labels_hz: list
+    current: np.ndarray = None       # settings the measurement was made with
+    gain_scale: float = 1.0
+    cut_factor: float = 1.0
+
+    @property
+    def change(self) -> np.ndarray:
+        return self.steps_int - self.current
 
     def summary(self) -> str:
-        lines = ["band  label    cont   int"]
-        for i, (lab, c, g) in enumerate(zip(self.labels_hz, self.steps_cont, self.steps_int)):
-            lines.append(f"{i + 1:>4}  {('%g' % lab) if lab else '-':>6}  {c:5.2f}  {g:+d}")
+        iterating = np.any(self.current != 0)
+        lines = ["band  label    cont   int" + ("  (was  change)" if iterating else "")]
+        for i, (lab, c, g, cur) in enumerate(zip(self.labels_hz, self.steps_cont, self.steps_int, self.current)):
+            extra = f"  ({cur:+d}  {g - cur:+d})" if iterating else ""
+            lines.append(f"{i + 1:>4}  {('%g' % lab) if lab else '-':>6}  {c:5.2f}  {g:+d}{extra}")
         lines.append("")
+        lines.append(f"gain scale {self.gain_scale:.2f}, cut factor {self.cut_factor:.2f}")
         lines.append(f"weighted RMS error vs target: before {self.rms_before:.2f} dB, "
                      f"continuous {self.rms_cont:.2f} dB, integer {self.rms_int:.2f} dB "
                      f"({100 * (1 - self.rms_int / self.rms_before):.0f}% reduction)")
         lines.append("settings (left to right): " + " ".join(f"{g:+d}" for g in self.steps_int))
+        if iterating:
+            lines.append("change from current:      " + " ".join(f"{g:+d}" for g in self.change))
         return "\n".join(lines)
 
     def to_dict(self) -> dict:
@@ -87,6 +118,9 @@ class FitResult:
             "type": "careq-fit",
             "steps": [int(g) for g in self.steps_int],
             "steps_continuous": [round(float(g), 3) for g in self.steps_cont],
+            "current": [int(g) for g in self.current],
+            "change": [int(g) for g in self.change],
+            "gain_scale": self.gain_scale, "cut_factor": self.cut_factor,
             "labels_hz": self.labels_hz,
             "rms_db": {"before": round(self.rms_before, 3), "continuous": round(self.rms_cont, 3),
                        "integer": round(self.rms_int, 3)},
@@ -101,15 +135,24 @@ def _offset(resid_no_c: np.ndarray, w: np.ndarray) -> float:
     return float(-np.sum(w * resid_no_c) / np.sum(w))
 
 
-def integer_refine(A: np.ndarray, d: np.ndarray, w: np.ndarray, g0: np.ndarray, max_step: int,
-                   max_passes: int = 50) -> tuple[np.ndarray, float]:
+def effective_steps(x, gain_scale: float = 1.0, cut_factor: float = 1.0) -> np.ndarray:
+    """e(x): what the head unit delivers, in units of the identified per-step curve."""
+    x = np.asarray(x, dtype=float)
+    return gain_scale * np.where(x < 0, cut_factor, 1.0) * x
+
+
+def integer_refine(predict, d: np.ndarray, w: np.ndarray, g0: np.ndarray, max_step: int,
+                   max_passes: int = 50, max_boost: int | None = None) -> tuple[np.ndarray, float]:
     """Coordinate descent on integer steps, +-1 moves, offset re-solved each time.
 
-    ``d`` = target - baseline. Minimises weighted RMS of A g + c - d."""
+    ``predict(g)`` returns the EQ curve for integer settings ``g``; ``d`` is
+    what it should equal. Minimises weighted RMS of predict(g) + c - d."""
     g = g0.astype(int).copy()
+    max_boost = max_step if max_boost is None else max_boost
+    g = np.clip(g, -max_step, max_boost)
 
     def cost(gv):
-        r = A @ gv - d
+        r = predict(gv) - d
         return weighted_rms(r + _offset(r, w), w)
 
     best = cost(g)
@@ -119,7 +162,7 @@ def integer_refine(A: np.ndarray, d: np.ndarray, w: np.ndarray, g0: np.ndarray, 
             for delta in (+1, -1):
                 cand = g.copy()
                 cand[k] += delta
-                if abs(cand[k]) > max_step:
+                if cand[k] > max_boost or cand[k] < -max_step:
                     continue
                 c = cost(cand)
                 if c < best - 1e-9:
@@ -129,35 +172,65 @@ def integer_refine(A: np.ndarray, d: np.ndarray, w: np.ndarray, g0: np.ndarray, 
     return g, best
 
 
+DEFAULT_GAIN_SCALE = 0.95
+DEFAULT_CUT_FACTOR = 0.93
+
+
 def fit_eq(baseline: Response, model: EqModel, target: Response, weights: np.ndarray | None = None,
-           max_step: int = 9, norm_range: tuple[float, float] = (200.0, 2000.0)) -> FitResult:
+           max_step: int = 9, norm_range: tuple[float, float] = (200.0, 2000.0),
+           current=None, gain_scale: float = DEFAULT_GAIN_SCALE, cut_factor: float | None = None,
+           max_boost: int | None = None) -> FitResult:
+    """Fit settings so that ``baseline`` (measured with ``current`` set, default
+    all zero) plus the change in EQ approaches ``target``. ``cut_factor``
+    defaults to the value identify stored in the model's notes, else 0.93.
+    ``max_boost`` (default ``max_step``) limits positive steps separately."""
+    max_boost = max_step if max_boost is None else min(max_boost, max_step)
     freq = model.freq
+    n = model.n_bands
     b = baseline.interp(freq).normalized(*norm_range)
     t = target.interp(freq).normalized(*norm_range)
     w = default_weights(freq) if weights is None else np.asarray(weights, dtype=float)
     A = model.per_step_matrix()
-    d = t.db - b.db
-    n = model.n_bands
+    cur = np.zeros(n, dtype=int) if current is None else np.asarray(current, dtype=int)
+    if cur.shape != (n,):
+        raise ValueError(f"current must have {n} entries")
+    if np.any(np.abs(cur) > max_step):
+        raise ValueError("current settings exceed max_step")
+    if cut_factor is None:
+        cut_factor = float(model.notes.get("cut_factor", DEFAULT_CUT_FACTOR))
+    e = lambda x: effective_steps(x, gain_scale, cut_factor)
+    predict = lambda x: A @ e(x)
 
+    d = t.db - b.db                      # what the EQ *change* must supply
+    d_abs = d + predict(cur)             # what the absolute settings must supply
     sw = np.sqrt(w)
-    A_aug = np.hstack([A, np.ones((len(freq), 1))]) * sw[:, None]
-    res = lsq_linear(A_aug, d * sw, bounds=([-max_step] * n + [-np.inf], [max_step] * n + [np.inf]))
-    g_cont, c_cont = res.x[:n], float(res.x[n])
+
+    # continuous: bounded LSQ, columns scaled by e'(x); re-solve until the
+    # signs (which choose the cut factor) stop changing
+    scale = np.full(n, gain_scale)
+    for _ in range(8):
+        A_aug = np.hstack([A * scale, np.ones((len(freq), 1))]) * sw[:, None]
+        res = lsq_linear(A_aug, d_abs * sw, bounds=([-max_step] * n + [-np.inf], [max_boost] * n + [np.inf]))
+        g_cont, c_cont = res.x[:n], float(res.x[n])
+        new_scale = gain_scale * np.where(g_cont < 0, cut_factor, 1.0)
+        if np.allclose(new_scale, scale):
+            break
+        scale = new_scale
 
     rms_before = weighted_rms(-d + _offset(-d, w), w)
-    r_cont = A @ g_cont - d
+    r_cont = predict(g_cont) - d_abs
     rms_cont = weighted_rms(r_cont + _offset(r_cont, w), w)
 
-    g_int, rms_int = integer_refine(A, d, w, np.round(g_cont), max_step)
-    r_int = A @ g_int - d
+    g_int, rms_int = integer_refine(predict, d_abs, w, np.round(g_cont), max_step, max_boost=max_boost)
+    r_int = predict(g_int) - d_abs
     c_int = _offset(r_int, w)
 
     labels = [bnd.label_hz for bnd in model.bands]
     return FitResult(
         freq, b, t, w, g_cont, g_int, c_cont, c_int, rms_before, rms_cont, rms_int,
-        Response(freq, b.db + A @ g_cont + c_cont, "predicted (continuous)"),
-        Response(freq, b.db + A @ g_int + c_int, "predicted"),
-        labels,
+        Response(freq, b.db + predict(g_cont) - predict(cur) + c_cont, "predicted (continuous)"),
+        Response(freq, b.db + predict(g_int) - predict(cur) + c_int, "predicted"),
+        labels, cur, gain_scale, cut_factor,
     )
 
 
@@ -177,7 +250,8 @@ def plot_fit(result: FitResult, path: str | Path, title: str = "") -> None:
         for s in ("top", "right"):
             a.spines[s].set_visible(False)
     ax.semilogx(result.freq, result.target.db, color=ink, linestyle="--", linewidth=1.5, label="target")
-    ax.semilogx(result.freq, result.baseline.db, color=blue, linewidth=2, label="measured (EQ flat)")
+    ax.semilogx(result.freq, result.baseline.db, color=blue, linewidth=2,
+                label="measured (EQ flat)" if not np.any(result.current) else "measured (current EQ)")
     ax.semilogx(result.freq, result.predicted_int.db, color=orange, linewidth=2, label="predicted with fitted EQ")
     ax.semilogx(result.freq, result.predicted_int.db - result.target.db, color=aqua, linewidth=1.5,
                 label="residual (predicted - target)")
