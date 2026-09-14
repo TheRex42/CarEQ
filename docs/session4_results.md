@@ -242,11 +242,19 @@ typical spread, so the 11 dB drop from 125 Hz to 160 Hz is in what the
 speakers radiate, not in where the microphone sat. It was previously
 described here as a floor-bounce cancellation; that was wrong.
 
-A broad source-side loss in this region is what an unsealed door does: the
-inner skin's access holes let the woofer's back wave meet its front wave.
-That makes it the one part of the response that door sealing could
-plausibly change, and it is measurable before and after with nine
-recordings each.
+What this does *not* establish is the cause. Two explanations fit equally
+well and the measurement cannot separate them:
+
+1. An unsealed door. The inner skin's access holes let the woofer's back
+   wave leak out and meet its front wave, which subtract. Sealing the holes
+   would change this.
+2. The head unit's own tuning notching 160 Hz deliberately. This would look
+   identical in the measurement and sealing would do nothing for it.
+
+So "the 160 Hz dip is a door problem" is a hypothesis, not a finding. Door
+sealing is worth trying on its other merits (rattle, road noise) and is
+measurable before and after with nine recordings each, but it should not be
+undertaken on the assumption that it will fill this dip.
 
 The 80 to 100 Hz hump, by contrast, varies by over 2 dB between positions,
 so it is partly modal rather than pure cabin gain.

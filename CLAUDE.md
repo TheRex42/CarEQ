@@ -134,12 +134,13 @@ responses) to catch ALC-class settings, which fail silently.
    50-60 Hz, NOT the usual 80, which would feed the +13.8 dB hump at 83 Hz.
    Non-Bose gen4 has no preouts: tap speaker level under the passenger
    seat. Retune afterwards; set level, crossover and phase by measurement.
-5. **Door sealing** as a separate, measurable experiment. The 160 Hz dip is
-   a source property (0.77 dB spread across 18 positions vs 1.73 median),
-   consistent with an unsealed door's acoustic short circuit, so sealing
-   the inner skin could fill it. Risk: it may also raise the 80-125 Hz
-   hump, where bands 2-3 are already pinned at -9. Measure 9 before, 9
-   after.
+5. **Door sealing** as a separate, measurable experiment. The 160 Hz dip
+   is a source property (0.77 dB spread across 18 positions vs 1.73
+   median), but the cause is NOT established: an unsealed door's acoustic
+   short circuit and a deliberate notch in Mazda's own tuning fit the data
+   equally well, and sealing only helps the first. Reliable benefits are
+   rattle and road noise. Risk: it may raise the 80-125 Hz hump, where
+   bands 2-3 are already pinned at -9. Measure 9 before, 9 after.
 
 ### Known dead ends (do not retry)
 
