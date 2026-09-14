@@ -219,3 +219,34 @@ What the measurements say about the three:
   treble, which is what these three are for.
 - B and C need 43-47 steps of cut against A's 31; with the free level
   offset that is only a louder volume setting, not a quality difference.
+
+# The 160 Hz dip is a source property (2026-09-14)
+
+Checked across all 18 flat recordings, because it matters for whether door
+treatment could help. Standard deviation of the 1/3-octave level between
+positions:
+
+| frequency | spread between 18 positions |
+|---|---|
+| 80 Hz | 2.29 dB |
+| 100 Hz | 1.85 dB |
+| 160 Hz | 0.77 dB |
+| 200 Hz | 0.80 dB |
+| 250 Hz | 0.71 dB |
+| 500 Hz | 1.93 dB |
+| 1.25 kHz | 3.37 dB |
+
+Median across 40 Hz-16 kHz is 1.73 dB. The 160 to 315 Hz region is the most
+position-independent part of the whole spectrum, at less than half the
+typical spread, so the 11 dB drop from 125 Hz to 160 Hz is in what the
+speakers radiate, not in where the microphone sat. It was previously
+described here as a floor-bounce cancellation; that was wrong.
+
+A broad source-side loss in this region is what an unsealed door does: the
+inner skin's access holes let the woofer's back wave meet its front wave.
+That makes it the one part of the response that door sealing could
+plausibly change, and it is measurable before and after with nine
+recordings each.
+
+The 80 to 100 Hz hump, by contrast, varies by over 2 dB between positions,
+so it is partly modal rather than pure cabin gain.
