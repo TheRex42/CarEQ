@@ -1,9 +1,15 @@
-# careq - Mazda 3 head-unit EQ tuner (Phase 0: desktop Python)
+# careq - Mazda 3 head-unit EQ tuner (desktop Python)
 
-Goal: tune a 2021 Mazda 3's 13-band graphic EQ (integer steps -9..+9, fixed
-frequencies, unknown filter shapes) toward a target curve using an Android
-phone mic. Sweeps go to the car on a USB stick; the phone records; this
-package does everything else. Bases are MEASURED per band, never assumed.
+Goal: tune one 2021 Mazda 3's 13-band graphic EQ (integer steps -9..+9,
+fixed frequencies, unknown filter shapes) toward a target curve by
+measuring it. Sweeps go to the car on a USB stick, a USB microphone on a
+laptop records, this package does everything else. Bases are MEASURED per
+band, never assumed.
+
+**This is a DIY tuning tool for a specific car, not a general app.** The
+original plan had an Android app as phase 2; see the roadmap for why that
+was reconsidered. The signal processing generalises for free, the head-unit
+quirks, microphone calibration and user technique do not.
 
 ## Working here
 
@@ -69,26 +75,82 @@ Key design facts (do not re-derive):
 2. Band table: one clear peak per band near its label, similar dB/step
    (expect ~1 dB/step), `fit-err` small. Look at `bases.png`.
 3. Notes: `level_offset_warning_bands`, `symmetry_ok`, `linearity_ok`.
-4. Identification uses an EMPTY seat, phone on a holder, phone not moved.
-   Tuning baseline uses an OCCUPIED seat, hand-held, 5-7 positions, pooled
-   with `careq fit --measurement p1.wav --more p2.wav ...`.
-5. Recordings are a HyperX SoloCast clipped to the headrest of the seat NOT
-   being sat in. Let the recorder run 3 s past the end. `load_wav` takes
+4. Identification: mic clipped to the headrest of the seat NOT being sat
+   in, not moved between baseline and band runs. Only 4 bands are actually
+   needed (1, 5, 9, 13 plus a baseline lands within 1 step of the full
+   13-band model; see docs/method.md) once a full model for the head unit
+   exists. Tuning baseline: 9 positions around the driver's headrest,
+   pooled with `careq fit --measurement p1.wav --more p2.wav ...`.
+5. ALC OFF, fixed volume number, Bass/Treble unavailable (Customize EQ
+   replaces them). Let the recorder run 3 s past the end. `load_wav` takes
    channel 0 and resamples 44.1k -> 48k.
-6. Session docs: `docs/session2_plan.md`, `docs/session2_results.md`,
-   `docs/session3_plan.md`, `docs/session3_results.md`, `docs/microphone.md`.
-   Results that may be committed live in `results/<session>/`.
+6. Docs: `docs/method.md` (what every stage does + how the target was
+   reached), `docs/session{2,3,4}_results.md`, `docs/microphone.md`,
+   `docs/distortion.md`. Committable results live in `results/<session>/`.
 
 ## Roadmap
 
-Phase 0 (this): validated on real recordings 2026-09-13 (identification
-done); still to do: REW cross-check, mic calibration, first tuning pass
-with iterate. Phase 1: multi-position tuning, documented procedure. Phase 2: Android app (Kotlin,
-Oboe). Phase 3: live pink-noise RTA (`careq gen --pink 60` already writes
-the noise file).
+**Done (2026-09-13/14).** All 13 bands identified and cross-checked over
+three sessions. Multi-position tuning baseline, fit, and a measured
+verification in the car: predicted 2.64 dB weighted error, measured 2.73,
+from 4.54 flat. Settings loaded: `+4 -9 -9 +3 0 +4 +3 -6 +1 +4 -1 -1 0`.
+Three target voicings bundled. Harmonic distortion measured. Everything
+written up in `docs/method.md`.
+
+**Scope, reconsidered.** The signal processing was never the hard part; it
+worked on the first real recording and never gave a wrong answer. All three
+wrong conclusions along the way came from a head-unit setting nobody knew
+was on (ALC, silently adding 6 dB), an unmeasured microphone, and
+measurement discipline. A general app must solve those three for arbitrary
+cars, phones and users, while the maths ports for free. So this stays a
+tool for one car, used by someone willing to follow a procedure.
+
+If it were ever generalised, the split is: identification is a ratio
+through one microphone, hence microphone-independent and shareable per
+head-unit model; the baseline is one cabin, one seat, one listener, and
+never shareable. Unlike headphones, the unshareable half does most of the
+work. The one feature that would make it robust is an automatic
+level-linearity check (play the sweep at two levels, compare normalised
+responses) to catch ALC-class settings, which fail silently.
+
+### Next, in rough order
+
+1. **Listen.** Three voicings are loaded and being compared by ear
+   (`mazda_neutral`, `mazda_warm`, `mazda_bass`). Band 1 at +6 is worth
+   trying for deep bass, but NOT more: 40-50 Hz already measures 2 % THD
+   before any boost (`docs/distortion.md`).
+2. **REW cross-check.** Still the only external validation never done.
+   `careq measure --save-ir ir.wav` writes the averaged impulse response
+   for import; magnitudes should agree within ~1 dB at 1/3 octave.
+3. **Omnidirectional calibrated microphone** (decided; Dayton iMM-6C ~$30,
+   UMIK-1 ~$150, or borrow). Pattern matters more than the response curve:
+   a cardioid weights arrival directions differently from an ear and no
+   single calibration curve fixes that. Afterwards only the tuning baseline
+   needs redoing (9 recordings + refit); the band model is unaffected.
+   Expected gain is 0.0-0.6 dB weighted, but bands 11-13 could move several
+   steps.
+4. **Subwoofer** for the low bass, which no EQ can reach: 25-45 Hz is
+   ~11 dB under target and the doors are 10 dB down by 48 Hz. Cross at
+   50-60 Hz, NOT the usual 80, which would feed the +13.8 dB hump at 83 Hz.
+   Non-Bose gen4 has no preouts: tap speaker level under the passenger
+   seat. Retune afterwards; set level, crossover and phase by measurement.
+5. **Door sealing** as a separate, measurable experiment. The 160 Hz dip is
+   a source property (0.77 dB spread across 18 positions vs 1.73 median),
+   consistent with an unsealed door's acoustic short circuit, so sealing
+   the inner skin could fill it. Risk: it may also raise the 80-125 Hz
+   hump, where bands 2-3 are already pinned at -9. Measure 9 before, 9
+   after.
+
+### Known dead ends (do not retry)
+
+- Bass/Treble tone controls: disabled by Customize EQ.
+- A second fit pass: predicted gain 0.26 dB, mostly by cutting the treble
+  bands the microphone cannot vouch for.
+- The phone's internal mic as a reference: +13 dB hot at 10-16 kHz.
+- IR-based clock-drift estimators: biased 10-40 ppm by the cabin.
 
 ## References
 
 AutoEq (MIT; targets + fitting ideas), HouseCurve car curves
 (`careq/targets/README.md`), Farina 2000 sweep method. REW is validation
-only. Open Sound Meter is the Phase 3 RTA reference.
+only (item 2 above).
