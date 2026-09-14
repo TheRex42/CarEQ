@@ -171,6 +171,35 @@ Keep the current settings in the car meanwhile. They were verified by
 measurement and the treble bands sit at 0 to -1, so any microphone error up
 there has had little influence on them.
 
+### Multi-position averaging does not fix directivity
+
+A tempting idea, recorded here because it will come up again: if the tuning
+baseline averages nine microphone positions, does that not average the
+cardioid's directivity away and approximate an omni?
+
+No, for three reasons.
+
+1. **Orientation was not varied.** The clip held the microphone the same
+   way at every spot, so the directivity error is identical in all nine
+   recordings and survives the average intact. The data shows it: spot to
+   spot scatter is 1.3-1.4 dB over 6-16 kHz against 2.2 dB over
+   500 Hz-2 kHz. If orientation were swinging, the high frequencies would
+   be the most variable, because that is where the pattern is narrowest.
+   They are the least variable.
+2. **Even perfect orientation averaging converges on the wrong curve.** It
+   gives the random-incidence (diffuse-field) response, which differs from
+   an omni's free-field response in a frequency-dependent way. One bias
+   traded for another.
+3. **It helps least where it is needed most.** At low frequencies the
+   cabin is reasonably diffuse and a cardioid is nearly omnidirectional
+   anyway. Above 6 kHz, where the pattern has narrowed and the error is
+   real, the field is mostly direct sound from the tweeters, which is the
+   condition under which orientation averaging works worst.
+
+Position averaging fixes position scatter, which is what it is for. The two
+pooled baselines agreeing to 1.0 dB above 6 kHz shows consistency, not
+accuracy: a systematically tilted measurement repeats beautifully.
+
 ## How to get a real calibration
 
 Any of these beats searching further:
