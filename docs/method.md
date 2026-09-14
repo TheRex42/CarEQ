@@ -435,6 +435,40 @@ Three voicings were then bundled (`mazda_neutral`, `mazda_warm`,
 `mazda_bass`) differing only along the two axes the data says matter, for
 listening tests that measurement cannot settle.
 
+## Identification could be a third of the work
+
+Measured after the fact, from the finished model. The 13 bands turned out
+to be regular: Q clusters around 2.1 (only band 13 at 0.74 is an outlier)
+and dB/step spans 0.84 to 0.99. So most of the bases are predictable from a
+few of them.
+
+Refitting with a model where only some bands were measured and the rest
+were interpolated (known centre, interpolated Q and dB/step), then judging
+the resulting settings against the *full* measured model:
+
+| measured | recordings | settings vs full | delivered |
+|---|---|---|---|
+| all 13 | 15 | reference | 2.52 dB |
+| bands 1, 5, 9, 13 | 5 | max 1 step | 2.54 dB |
+| bands 1, 4, 7, 10, 13 | 6 | max 1 step | 2.54 dB |
+| bands 1, 7, 13 | 4 | max 2 steps | 2.56 dB |
+
+Four band recordings plus a baseline land within one step of the full
+model, which is inside the method's own scatter. The 45-minute
+identification session could be about ten minutes.
+
+The catch is that this is only knowable *because* all 13 were measured. The
+first car of a given head-unit model needs the full set; after that a
+four-recording run confirms the shared model fits that particular car.
+
+This also sets the architecture for anything more general. Identification
+is a ratio of two recordings through the same microphone, so it is
+microphone-independent and therefore shareable between users and phones:
+measure a head-unit model once, everyone with that car reuses it. The
+baseline is the opposite, being specific to one cabin, one seat and one
+listener, and can never be shared. The expensive half is the transferable
+one.
+
 ## Open items
 
 - **Microphone calibration.** A single baseline recorded with a calibrated
