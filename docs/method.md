@@ -1,4 +1,4 @@
-# How careq works, and how the Mazda 3 target was arrived at
+  # How careq works, and how the Mazda 3 target was arrived at
 
 Written 2026-09-13 after Phase 0 completed: four recording sessions in a
 2021 Mazda 3, all 13 EQ bands identified, a tuning fit computed and then
@@ -395,7 +395,7 @@ The change the EQ made matched the model's prediction within 1.05 dB RMS.
 An accidental second flat-EQ session, recorded 25 minutes after the first,
 provides the scale: two pooled nine-position baselines of the same car in
 the same state differ by 1.0 dB RMS. The model is therefore as accurate as
-the measurement is repeatable, and further iteration cannot improve it.
+the measurement is repeatable, and further iteration cannot improve itS.
 
 The bass came out better than predicted: cuts at 63 and 100 Hz landed 1.5 to
 2 dB deeper than the model said, leaving 1.1 dB RMS in the 60 to 120 Hz
@@ -443,8 +443,9 @@ listening tests that measurement cannot settle.
 - **REW cross-check.** `careq measure --save-ir` writes the averaged impulse
   response as a WAV for import into REW, to confirm the magnitude response
   against an independent implementation. Not yet done.
-- **The Bass tone control** is a broad low shelf, the one shape the sliders
-  lack and exactly what the remaining hump needs.
+- ~~The Bass tone control~~ is not available: selecting Customize EQ
+  replaces Bass and Treble on this head unit, so the 13 sliders are the
+  only gain there is. The residual bass hump is permanent.
 - **An unexplained level jump:** the verification recordings were 18.6 dB
   louder in absolute terms than both flat sets, while the EQ accounts for
   under 1 dB of that. Either the volume or the recorder gain changed. The

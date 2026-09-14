@@ -77,13 +77,15 @@ is the safe one; Car A's -6/-6/-7 is a large cut on top of an unmeasured mic.
 
 Everything above 250 Hz ends within about +-2 dB of the target. The bass
 hump is the one thing the 13 bands cannot finish: bands 2 and 3 are pinned
-at -9 and still leave +6 dB at 80 Hz against a +3 dB target. Two ways to
-get the rest, both outside the EQ sliders:
+at -9 and still leave +6 dB at 80 Hz against a +3 dB target.
 
-1. The head unit's **Bass** tone control (a broad low shelf) at -2 or -3,
-   then re-measure, since it changes the baseline. Cheapest and cleanest.
-2. Accept it. A +5 dB bump at 80 Hz in a car is what many people like,
-   and the target's own +3 dB shelf says so too.
+**There is no way to get the rest.** On this head unit, selecting Customize
+EQ replaces the Bass and Treble tone controls, so the 13 sliders are the
+only gain available (confirmed by the owner 2026-09-14; an earlier version
+of this document recommended a Bass tone control experiment, which is not
+possible). Bands 2 and 3 at -9 is the hard ceiling, and a residual +5 to
++6 dB bump at 80 Hz is what this car does. The target's own +3 dB shelf
+means it is not far off what was wanted anyway.
 
 ## Pass 2
 
@@ -179,7 +181,9 @@ within the method's one-step scatter.
 2. The 2 kHz bump between bands 8 and 9: crossover region, no slider
    centre there, and it varies with head position anyway.
 3. Treble tilt: needs a mic calibration before it is worth touching.
-4. The last 1-2 dB of bass hump: the Bass tone control, if wanted.
+4. The last 5-6 dB of bass hump: nothing. Customize EQ disables the Bass
+   tone control, so the sliders are all there is and bands 2-3 are at the
+   rail.
 
 # Three voicings to try by ear
 
