@@ -202,6 +202,25 @@ level is arbitrary anyway.
 response dominate and the speakers cannot deliver output; above 16 kHz the
 microphone is unknown. Neither is worth spending sliders on.
 
+Those weights are applied on a grid that is uniform in log frequency, so
+every octave counts equally. That is the natural axis for the thing being
+adjusted, since the EQ bands are themselves log spaced, but it is not how
+the ear divides the spectrum. Auditory filter bandwidth is roughly constant
+below about 500 Hz and proportional to frequency above it, so the bass
+holds far fewer resolvable bands than equal-per-octave implies: the
+midpoint of 20 Hz to 20 kHz is 632 Hz on a log axis and about 2 kHz on an
+ERB axis, and 20 to 632 Hz is half of a log chart but 28 % of auditory
+bandwidth.
+
+`erb_density(f) = f / (f + 228.8)` is the derivative of the ERB number with
+respect to log frequency, and multiplying the weights by it restores the
+ear's proportions. Every fit reports both numbers, whichever it optimised
+(`--erb-weight` switches which one is optimised). The ERB figure is always
+the lower of the two here, because the largest errors are in the bass,
+which it de-emphasises. It measures frequency *resolution* rather than
+importance, so it is offered alongside the log-uniform number, not as a
+replacement.
+
 **Solve.** Bounded weighted least squares (`scipy.optimize.lsq_linear`) over
 the 13 gains plus the offset. Because `e(x)` bends at zero (cuts are scaled
 by `cut_factor`), the solve is repeated with column scales updated from the
@@ -408,6 +427,11 @@ flat baselines on its own. The remaining 0.11 dB is inside the method's
 one-step scatter.
 
 ## What remains, and why
+
+Measured in the car with the pass-1 settings, the two weightings put the
+result at 2.73 dB equal-per-octave and 1.79 dB by auditory bandwidth before
+EQ, 2.47 and 1.56 after. The three bundled voicings land at 2.52 to 2.66
+log-uniform and 1.87 to 1.98 ERB-weighted.
 
 | region | factory | after EQ |
 |---|---|---|

@@ -11,7 +11,8 @@ import numpy as np
 from .signals import SweepSpec, generate
 from .measure import (LOG_GRID, MeasureOptions, Measurement, Response, measure_files, apply_mic_cal)
 from .identify import identify, EqModel, DEFAULT_LABELS_HZ, N_BANDS_DEFAULT
-from .fit import fit_eq, load_target, list_targets, plot_fit, default_weights, DEFAULT_GAIN_SCALE
+from .fit import (fit_eq, load_target, list_targets, plot_fit, default_weights, erb_weights,
+                  DEFAULT_GAIN_SCALE)
 
 
 def _load_spec(args, manifest: dict | None = None, base: Path | None = None) -> SweepSpec:
@@ -197,12 +198,14 @@ def cmd_fit(args) -> int:
     if args.mic_cal:
         baseline = apply_mic_cal(baseline, Response.from_csv(args.mic_cal))
     target = load_target(args.target)
-    w = default_weights(model.freq, f_lo=args.w_lo, f_hi=args.w_hi, f_min=args.fmin, f_max=args.fmax)
+    wfn = erb_weights if args.erb_weight else default_weights
+    w = wfn(model.freq, f_lo=args.w_lo, f_hi=args.w_hi, f_min=args.fmin, f_max=args.fmax)
     current = _parse_current(args.current, model.n_bands)
     if current is not None:
         print("current settings: " + " ".join(f"{g:+d}" for g in current))
     result = fit_eq(baseline, model, target, weights=w, max_step=args.max_step, max_boost=args.max_boost,
-                    current=current, gain_scale=args.gain_scale, cut_factor=args.cut_factor)
+                    current=current, gain_scale=args.gain_scale, cut_factor=args.cut_factor,
+                    erb_weighted=args.erb_weight)
     print(result.summary())
     if args.out:
         Path(args.out).write_text(json.dumps(result.to_dict(), indent=1))
@@ -330,6 +333,9 @@ def build_parser() -> argparse.ArgumentParser:
     f.add_argument("--w-hi", type=float, default=12000.0, help="full weight below this frequency")
     f.add_argument("--fmin", type=float, default=30.0, help="weight reaches its floor (5%%) below this")
     f.add_argument("--fmax", type=float, default=16000.0, help="weight reaches its floor (5%%) above this")
+    f.add_argument("--erb-weight", action="store_true",
+                   help="optimise on auditory-bandwidth weighting instead of equal-per-octave "
+                        "(the ERB number is reported either way)")
     f.add_argument("--out", default="fit.json")
     f.add_argument("--plot", default="fit.png")
     _add_measure_args(f)

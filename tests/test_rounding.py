@@ -56,3 +56,49 @@ def test_bounds_respected():
     assert np.all(np.abs(r.steps_int) <= 9)
     assert np.all(np.abs(r.steps_cont) <= 9 + 1e-9)
     assert np.any(np.abs(r.steps_int) == 9)
+
+
+def test_erb_density_and_both_weightings_reported():
+    """ERB density follows auditory bandwidth, and both error numbers are
+    available and consistent whichever weighting the fit optimised."""
+    from careq.fit import erb_density, erb_weights, ERB_F0
+
+    d = erb_density(LOG_GRID)
+    assert np.all(np.diff(d) > 0)                       # monotonic in frequency
+    assert 0 < d[0] < 0.1 and d[-1] > 0.98              # small in the bass, ~1 up top
+    assert abs(erb_density(np.array([ERB_F0]))[0] - 0.5) < 1e-9
+
+    # the midpoint of 20 Hz-20 kHz is ~632 Hz on a log axis, ~2 kHz on an ERB axis
+    erb_no = lambda f: 21.4 * np.log10(4.37 * f / 1000 + 1)
+    half = (erb_no(20.0) + erb_no(20000.0)) / 2
+    f_mid = LOG_GRID[np.argmin(np.abs(erb_no(LOG_GRID) - half))]
+    assert 1800 < f_mid < 2200, f_mid
+
+    rng = np.random.default_rng(5)
+    model = random_model(rng)
+    base = random_baseline(rng)
+    target = Response(LOG_GRID, np.zeros_like(LOG_GRID))
+
+    r_log = fit_eq(base, model, target)
+    r_erb = fit_eq(base, model, target, weights=erb_weights(LOG_GRID), erb_weighted=True)
+
+    # the continuous solve is a genuine optimum, so each wins on its own metric
+    def werr(resp, w):
+        r = resp.db - target.db
+        return weighted_rms(r - np.sum(w * r) / np.sum(w), w)
+
+    we, wl = erb_weights(LOG_GRID), default_weights(LOG_GRID)
+    assert werr(r_erb.predicted_cont, we) <= werr(r_log.predicted_cont, we) + 1e-6
+    assert werr(r_log.predicted_cont, wl) <= werr(r_erb.predicted_cont, wl) + 1e-6
+    # the integer stage is +-1 coordinate descent, a heuristic, so it can land a
+    # little the wrong side of the other fit; it must still be close, and far
+    # inside the ~1 dB / ~1 step resolution of the method as a whole
+    assert abs(r_erb.errors(erb=True)[1] - r_log.errors(erb=True)[1]) < 0.15
+    assert np.abs(r_erb.steps_int - r_log.steps_int).max() <= 3
+    # the optimised number matches the correspondingly weighted one
+    assert abs(r_log.errors(erb=False)[1] - r_log.rms_int) < 1e-9
+    assert abs(r_erb.errors(erb=True)[1] - r_erb.rms_int) < 1e-9
+    # band_weights recovers the un-scaled weights
+    assert np.allclose(r_erb.band_weights, default_weights(LOG_GRID))
+    for r in (r_log, r_erb):
+        assert "rms_erb_db" in r.to_dict() and "rms_log_db" in r.to_dict()

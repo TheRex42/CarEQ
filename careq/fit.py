@@ -73,6 +73,36 @@ def weighted_rms(resid: np.ndarray, w: np.ndarray) -> float:
     return float(np.sqrt(np.sum(w * resid ** 2) / np.sum(w)))
 
 
+# Glasberg & Moore (1990): ERB(f) = 24.7 * (4.37 f / 1000 + 1) Hz, so the ERB
+# *number* is 21.4 log10(4.37 f / 1000 + 1) and its derivative with respect to
+# log f is proportional to f / (f + 228.8).
+ERB_F0 = 1000.0 / 4.37      # 228.8 Hz
+
+
+def erb_density(freq: np.ndarray = LOG_GRID) -> np.ndarray:
+    """Auditory bandwidths per unit log-frequency, normalised to 1 well above
+    ``ERB_F0``.
+
+    Auditory filter bandwidth is roughly constant below ~500 Hz and
+    proportional to frequency above it, so the number of resolvable bands per
+    octave falls away in the bass. An error evaluated on a log-uniform grid
+    gives every octave equal weight, which over-weights the bass relative to
+    how the ear divides the spectrum: the midpoint of 20 Hz-20 kHz is 632 Hz
+    on a log axis and about 2 kHz on an ERB axis. Multiplying the fit weights
+    by this restores the ear's proportions.
+
+    It measures frequency *resolution*, not importance, so it is reported
+    alongside the log-uniform number rather than replacing it.
+    """
+    f = np.asarray(freq, dtype=float)
+    return f / (f + ERB_F0)
+
+
+def erb_weights(freq: np.ndarray = LOG_GRID, **kw) -> np.ndarray:
+    """``default_weights`` scaled by :func:`erb_density`."""
+    return default_weights(freq, **kw) * erb_density(freq)
+
+
 @dataclasses.dataclass
 class FitResult:
     freq: np.ndarray
@@ -92,10 +122,35 @@ class FitResult:
     current: np.ndarray = None       # settings the measurement was made with
     gain_scale: float = 1.0
     cut_factor: float = 1.0
+    erb_weighted: bool = False       # whether `weights` already include erb_density
 
     @property
     def change(self) -> np.ndarray:
         return self.steps_int - self.current
+
+    @property
+    def band_weights(self) -> np.ndarray:
+        """The band-limit weights alone, with any ERB scaling divided back out."""
+        return self.weights / erb_density(self.freq) if self.erb_weighted else self.weights
+
+    def errors(self, erb: bool = False) -> tuple[float, float]:
+        """(before, after) weighted RMS vs target, with a free level offset.
+
+        ``erb=False`` weights every octave equally, which is what a log
+        frequency axis shows. ``erb=True`` scales by auditory bandwidth
+        density so the weighting matches how the ear divides the spectrum;
+        see :func:`erb_density`. Both are available whichever one the fit
+        optimised."""
+        w = self.band_weights * (erb_density(self.freq) if erb else 1.0)
+
+        def e(db):
+            r = np.asarray(db) - self.target.db
+            return weighted_rms(r - np.sum(w * r) / np.sum(w), w)
+
+        return e(self.baseline.db), e(self.predicted_int.db)
+
+    def erb_errors(self) -> tuple[float, float]:
+        return self.errors(erb=True)
 
     def summary(self) -> str:
         iterating = np.any(self.current != 0)
@@ -105,9 +160,14 @@ class FitResult:
             lines.append(f"{i + 1:>4}  {('%g' % lab) if lab else '-':>6}  {c:5.2f}  {g:+d}{extra}")
         lines.append("")
         lines.append(f"gain scale {self.gain_scale:.2f}, cut factor {self.cut_factor:.2f}")
-        lines.append(f"weighted RMS error vs target: before {self.rms_before:.2f} dB, "
+        opt = "auditory bandwidth" if self.erb_weighted else "equal per octave"
+        lines.append(f"weighted RMS error vs target ({opt}, optimised): before {self.rms_before:.2f} dB, "
                      f"continuous {self.rms_cont:.2f} dB, integer {self.rms_int:.2f} dB "
                      f"({100 * (1 - self.rms_int / self.rms_before):.0f}% reduction)")
+        ob, oa = self.errors(erb=not self.erb_weighted)
+        other = "equal per octave" if self.erb_weighted else "auditory bandwidth"
+        lines.append(f"  same settings, {other}: before {ob:.2f} dB, integer {oa:.2f} dB "
+                     f"({100 * (1 - oa / ob):.0f}% reduction)")
         lines.append("settings (left to right): " + " ".join(f"{g:+d}" for g in self.steps_int))
         if iterating:
             lines.append("change from current:      " + " ".join(f"{g:+d}" for g in self.change))
@@ -124,6 +184,9 @@ class FitResult:
             "labels_hz": self.labels_hz,
             "rms_db": {"before": round(self.rms_before, 3), "continuous": round(self.rms_cont, 3),
                        "integer": round(self.rms_int, 3)},
+            "rms_erb_db": dict(zip(("before", "integer"), [round(v, 3) for v in self.errors(erb=True)])),
+            "rms_log_db": dict(zip(("before", "integer"), [round(v, 3) for v in self.errors(erb=False)])),
+            "optimised_weighting": "erb" if self.erb_weighted else "log",
             "freq": [round(float(f), 3) for f in self.freq],
             "baseline_db": [round(float(x), 3) for x in self.baseline.db],
             "predicted_db": [round(float(x), 3) for x in self.predicted_int.db],
@@ -179,11 +242,13 @@ DEFAULT_CUT_FACTOR = 0.93
 def fit_eq(baseline: Response, model: EqModel, target: Response, weights: np.ndarray | None = None,
            max_step: int = 9, norm_range: tuple[float, float] = (200.0, 2000.0),
            current=None, gain_scale: float = DEFAULT_GAIN_SCALE, cut_factor: float | None = None,
-           max_boost: int | None = None) -> FitResult:
+           max_boost: int | None = None, erb_weighted: bool = False) -> FitResult:
     """Fit settings so that ``baseline`` (measured with ``current`` set, default
     all zero) plus the change in EQ approaches ``target``. ``cut_factor``
     defaults to the value identify stored in the model's notes, else 0.93.
-    ``max_boost`` (default ``max_step``) limits positive steps separately."""
+    ``max_boost`` (default ``max_step``) limits positive steps separately.
+    Set ``erb_weighted`` when ``weights`` already include :func:`erb_density`,
+    so the summary can report both weightings without double-counting."""
     max_boost = max_step if max_boost is None else min(max_boost, max_step)
     freq = model.freq
     n = model.n_bands
@@ -230,7 +295,7 @@ def fit_eq(baseline: Response, model: EqModel, target: Response, weights: np.nda
         freq, b, t, w, g_cont, g_int, c_cont, c_int, rms_before, rms_cont, rms_int,
         Response(freq, b.db + predict(g_cont) - predict(cur) + c_cont, "predicted (continuous)"),
         Response(freq, b.db + predict(g_int) - predict(cur) + c_int, "predicted"),
-        labels, cur, gain_scale, cut_factor,
+        labels, cur, gain_scale, cut_factor, erb_weighted,
     )
 
 
