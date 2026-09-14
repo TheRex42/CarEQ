@@ -48,7 +48,8 @@ Key design facts (do not re-derive):
   every fit ALSO reports the same error weighted by auditory bandwidth
   (`erb_density(f) = f/(f+228.8)`), which is always lower because the big
   errors are in the bass. `--erb-weight` optimises on it instead; on this
-  car that moves 8 bands by one step and is inside the method's scatter. Effective steps = 0.95 * steps (cuts x0.93 more). With ALC ON
+  car that moves 8 bands by one step and is inside the method's scatter.
+  Effective steps = 0.95 * steps (cuts x0.93 more). With ALC ON
   the head unit adds ~6 dB and its limiter clips big boosts (session 2's
   "superposition failure" was that); with ALC OFF adjacent bands add to
   within ~5 %. `--max-boost` caps boosts separately (headroom). One pass is
