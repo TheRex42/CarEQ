@@ -18,3 +18,28 @@ export) can be passed to `careq fit --target FILE`.
 
 Sources: HouseCurve (https://housecurve.com/docs/tuning/target_curve),
 AutoEq (MIT, https://github.com/jaakkopasanen/AutoEq).
+
+## How much authority these car curves carry (checked 2026-09-14)
+
+Less than the names suggest. HouseCurve's page introduces them only as
+"some additional curves ... for automobiles. These curves have
+significantly more bass which is common for automobile listening", with no
+attribution. The curve files carry a single header line each, Car B's
+reading "Variant of JBL curve". That is the entire published derivation.
+
+Harman's listener-preference research, the body of work usually meant by
+"the Harman curve", is on headphones and on loudspeakers in rooms. Their
+automotive publications are largely measurement methodology, for example
+Olive and Welti, "Validation of a Binaural Car Scanning Measurement System
+for Subjective Evaluation of Automotive Audio Systems", AES 36th
+International Conference on Automotive Audio, 2009. There is no in-car
+target curve with the statistical backing the headphone targets have.
+
+So none of `harman_car`, `housecurve_car_a/b/c` is a standard in the sense
+that the Harman headphone target is. They are reasonable starting points
+that agree on the broad shape, a bass lift of roughly 6 dB, flat mids and a
+gentle treble roll-off, and they disagree on the details because nobody has
+settled them.
+
+The `mazda_*` curves are explicitly preferences, not derivations: see
+`docs/targets.md`.
