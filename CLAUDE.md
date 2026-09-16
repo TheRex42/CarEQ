@@ -2,9 +2,10 @@
 
 Goal: tune one 2021 Mazda 3's 13-band graphic EQ (integer steps -9..+9,
 fixed frequencies, unknown filter shapes) toward a target curve by
-measuring it. Sweeps go to the car on a USB stick, a USB microphone on a
-laptop records, this package does everything else. Bases are MEASURED per
-band, never assumed.
+measuring it. Sweeps go to the car on a USB stick, a USB microphone plugged
+into an Android phone records, this package does everything else. Bases are
+MEASURED per band, never assumed. (There is no laptop in this setup; earlier
+drafts wrongly assumed one.)
 
 **This is a DIY tuning tool for a specific car, not a general app.** The
 original plan had an Android app as phase 2; see the roadmap for why that

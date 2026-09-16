@@ -23,7 +23,7 @@ running 3 s past the end.
 tune_pos1.wav ... tune_pos5.wav
 ```
 
-Then on the laptop:
+Then, back at the computer:
 
 ```
 careq fit --measurement Recordings/Session4/tune_pos1.wav \

@@ -13,10 +13,24 @@ differently from an ear.
 
 # Before going out (at the desk, 10 minutes)
 
+**0. Confirm the whole chain works, and that it is actually recording the
+iMM-6.** Apple's USB-C dongle is a standard USB audio device and generally
+works on Android, but this is a new front end and the failure mode is
+silent: the recording app falls back to the phone's built-in microphone and
+gives you a perfectly good-looking file that is 21 dB hot at 12.5 kHz
+(`docs/microphone.md`).
+
+Plug everything in, record ten seconds, and **tap the iMM-6 capsule** while
+recording. If the taps are loud and obvious you are on the external
+microphone. If they are faint, the app is on the internal one, and no
+setting in this plan will save the session. Check the app's input selector
+and its audio source setting; unprocessed or voice-recognition, never the
+default.
+
 **1. Download the calibration file** by serial number from Dayton's site.
 Keep it with the recordings as `imm6_cal.txt`.
 
-**2. Check careq can read it and that the sign is right.** This is the one
+**2. Check careq can read the calibration file and that the sign is right.** This is the one
 thing that silently doubles the error instead of removing it.
 
 ```
@@ -44,11 +58,17 @@ TRRS iMM-6 going through an Apple USB-C dongle. Two consequences:
   which is exactly the kind of uncalibrated element this session exists to
   remove. Part 4 is therefore **not optional any more**; it is the check on
   the dongle.
-- **Prefer the laptop as the host.** The dongle is USB-C and works on any
-  USB-audio host. The laptop already records bare WAVs with no processing,
-  it has been the chain for every session so far, and phone inputs often
-  apply automatic gain that the level-linearity check will not reveal
-  because it is not level-dependent in the way a limiter is.
+- **The host is the phone, as it has been all along.** The SoloCast has
+  gone into the phone over USB-C for every session; there is no laptop.
+  That chain has behaved: three sweeps inside a file agree to 0.03-0.09 dB,
+  and the noise floor holds flat through the gaps between them, neither of
+  which survives an automatic gain control. The evidence is empirical
+  rather than assumed, and it applies to the USB path specifically.
+- **What is new is the analogue front end.** The SoloCast did its own
+  conversion and presented USB audio to the phone. The iMM-6 hands an
+  analogue signal to the Apple dongle, which does the conversion. Whatever
+  the dongle's preamp does is now in the measurement, and the calibration
+  file does not describe it.
 
 **4. Cable reach.** The iMM-6's lead is short and the mic has to sit on the
 driver's headrest while you work from the passenger seat, moving it to nine
@@ -59,9 +79,12 @@ positions.
 - If you must extend the 3.5 mm side, the cable has to be **4-pole TRRS**.
   An ordinary 3-pole headphone extension has no ring for the microphone and
   will simply not work, or will work intermittently.
-- **Keep the host away from the microphone.** A laptop on the passenger
-  seat, 60-80 cm away and below the capsule, is fine. A phone held 20 cm
-  from the microphone is a reflector and will show up above a few kHz.
+- **Put the phone down, do not hold it.** Start the recording, then set the
+  phone on the driver's seat or the console, below the capsule and 50 cm or
+  more away, before touching the microphone. A phone held 20 cm from the
+  capsule is a reflector and shows up above a few kHz. This matters more
+  than it did with the SoloCast, because now the recorder has to sit near
+  the microphone rather than wherever was convenient.
 
 ---
 
