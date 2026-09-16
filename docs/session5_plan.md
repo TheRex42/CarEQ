@@ -20,8 +20,12 @@ silent: the recording app falls back to the phone's built-in microphone and
 gives you a perfectly good-looking file that is 21 dB hot at 12.5 kHz
 (`docs/microphone.md`).
 
-Plug everything in, record ten seconds, and **tap the iMM-6 capsule** while
-recording. If the taps are loud and obvious you are on the external
+Plug everything in **exactly as it will be used in the car, USB-C extension
+included**, and test that arrangement rather than a simplified one. The
+extension is the most likely component to misbehave: USB-C extension cables
+are technically out of specification and some are unreliable, so find out
+now and not in the driveway. Record ten seconds and **tap the iMM-6
+capsule** while recording. If the taps are loud and obvious you are on the external
 microphone. If they are faint, the app is on the internal one, and no
 setting in this plan will save the session. Check the app's input selector
 and its audio source setting; unprocessed or voice-recognition, never the
@@ -74,8 +78,11 @@ TRRS iMM-6 going through an Apple USB-C dongle. Two consequences:
 driver's headrest while you work from the passenger seat, moving it to nine
 positions.
 
-- **Extend on the USB side, not the analogue side**: a USB-C extension
-  between the dongle and the host. Digital, so nothing degrades.
+- **Extend on the USB side, not the analogue side**: the USB-C extension
+  goes between the dongle and the phone, so the chain is capsule, short
+  TRRS lead, dongle, extension, phone. Digital across the long run, so
+  nothing degrades, and the dongle ends up about a metre from the capsule
+  on the seat rather than next to it.
 - If you must extend the 3.5 mm side, the cable has to be **4-pole TRRS**.
   An ordinary 3-pole headphone extension has no ring for the microphone and
   will simply not work, or will work intermittently.
