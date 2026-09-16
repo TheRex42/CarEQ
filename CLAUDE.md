@@ -64,7 +64,9 @@ Key design facts (do not re-derive):
   mirror boosts at 93 %, level wanders ~1 dB between files during a session
   (interleave baselines; identify subtracts each run's far-field offset),
   road noise is irrelevant above 31 Hz. ALC must be OFF and the volume
-  number fixed (session 3's). Combined model: `results/session3/eq_model.json`.
+  number fixed: Mazda volume 25 for every session so far; reference is
+  75 dB SPL C-slow on the PINK file, and the sweep runs 5.0 dB hotter than
+  pink at the same setting (`docs/level.md`). Combined model: `results/session3/eq_model.json`.
   `simulate.py`'s `HeadUnitEq.mazda_like` carries these numbers plus a soft
   gain limiter matching the ALC-off pair result.
 - Mic: HyperX SoloCast. No full-band measurement exists (docs/microphone.md);

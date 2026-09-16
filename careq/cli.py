@@ -83,9 +83,21 @@ def cmd_measure(args) -> int:
         ir = m.ir()
         sf.write(args.save_ir, ir / (np.max(np.abs(ir)) + 1e-12) * 0.9, m.fs, subtype="FLOAT")
         print(f"wrote {args.save_ir} (import in REW: File > Import > Import impulse response)")
-    if args.plot:
-        _plot_response([resp], args.plot, "Measured response (1/%g oct)" % args.smooth)
-        print(f"wrote {args.plot}")
+    if args.plot or args.compare:
+        series = [Response(LOG_GRID, resp.interp(LOG_GRID).normalized().db, "this measurement")]
+        if args.compare:
+            other = Response.from_csv(args.compare).interp(LOG_GRID).normalized()
+            series.append(Response(LOG_GRID, other.db, Path(args.compare).stem))
+            m = (LOG_GRID >= 40) & (LOG_GRID <= 16000)
+            d = series[0].db - other.db
+            print(f"  vs {Path(args.compare).name}: rms difference 40 Hz-16 kHz {np.sqrt(np.mean(d[m] ** 2)):.2f} dB, "
+                  f"max {np.max(np.abs(d[m])):.2f} dB at {LOG_GRID[m][np.argmax(np.abs(d[m]))]:.0f} Hz")
+            print("  (level removed from both; a difference here is a SHAPE change, "
+                  "e.g. a limiter or ALC acting at one of the two levels)")
+        if args.plot:
+            _plot_response(series if args.compare else [resp], args.plot,
+                           "Measured response (1/%g oct)" % args.smooth)
+            print(f"wrote {args.plot}")
     return 0
 
 
@@ -330,6 +342,8 @@ def build_parser() -> argparse.ArgumentParser:
     m.add_argument("--out", default="measurement.csv")
     m.add_argument("--save-npz", help="save the full measurement (spectra + IRs) for reuse")
     m.add_argument("--save-ir", help="save the averaged impulse response as WAV (for REW)")
+    m.add_argument("--compare", help="overlay another response CSV, level-matched, and report the difference "
+                                     "(use to check level-linearity: same position, two volumes)")
     m.add_argument("--plot")
     m.set_defaults(func=cmd_measure)
 
