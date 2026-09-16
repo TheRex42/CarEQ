@@ -1,6 +1,7 @@
 # Session 5 — calibrated microphone, volume reference, pink noise
 
-For when the Dayton iMM-6 arrives. About 20 minutes in the car, 14 files.
+For when the Dayton iMM-6 arrives (TRRS, through an Apple USB-C dongle).
+About 20 minutes in the car, 14 files.
 Everything learned so far is folded in, so this supersedes earlier drafts.
 
 The microphone is omnidirectional with an individual calibration file, which
@@ -34,10 +35,33 @@ response** and careq subtracts it, so a mic that reads hot at 10 kHz has a
 positive value there and the corrected measurement comes out lower. If
 applying it makes the car look *brighter*, the sign is inverted.
 
-**3. Know which variant you have.** The iMM-6 is 3.5 mm TRRS and needs a
-headset input; the iMM-6C is USB-C. A laptop headset jack is a different
-recording chain from the SoloCast's USB path and may have its own high-pass
-or automatic gain. Part 0 below tests for that.
+**3. The recording chain, not just the microphone.** The unit here is the
+TRRS iMM-6 going through an Apple USB-C dongle. Two consequences:
+
+- **The calibration file covers the microphone only.** The dongle contains
+  the preamp and the analogue-to-digital converter, and its input response
+  is not characterised by anyone. Headset inputs are commonly high-passed,
+  which is exactly the kind of uncalibrated element this session exists to
+  remove. Part 4 is therefore **not optional any more**; it is the check on
+  the dongle.
+- **Prefer the laptop as the host.** The dongle is USB-C and works on any
+  USB-audio host. The laptop already records bare WAVs with no processing,
+  it has been the chain for every session so far, and phone inputs often
+  apply automatic gain that the level-linearity check will not reveal
+  because it is not level-dependent in the way a limiter is.
+
+**4. Cable reach.** The iMM-6's lead is short and the mic has to sit on the
+driver's headrest while you work from the passenger seat, moving it to nine
+positions.
+
+- **Extend on the USB side, not the analogue side**: a USB-C extension
+  between the dongle and the host. Digital, so nothing degrades.
+- If you must extend the 3.5 mm side, the cable has to be **4-pole TRRS**.
+  An ordinary 3-pole headphone extension has no ring for the microphone and
+  will simply not work, or will work intermittently.
+- **Keep the host away from the microphone.** A laptop on the passenger
+  seat, 60-80 cm away and below the capsule, is fine. A phone held 20 cm
+  from the microphone is a reflector and will show up above a few kHz.
 
 ---
 
@@ -103,7 +127,7 @@ Two takes.
 pink1.wav  pink2.wav
 ```
 
-## Part 4 — optional, 1 file
+## Part 4 — SoloCast cross-check (1 minute, 1 file). Now required.
 
 Swap the SoloCast into the identical clamp position and record one sweep.
 
@@ -111,11 +135,18 @@ Swap the SoloCast into the identical clamp position and record one sweep.
 solocast_same_spot.wav
 ```
 
-It changes no setting. It buys two things: a control that separates "new
-microphone" from "different day, position or volume" if the new baseline
-looks unlike session 4's, and a test of the prediction that the SoloCast
-reads about 1.5 dB low above 6 kHz (`docs/targets.md`). Do it if the clamp
-is up and there is time.
+An earlier draft had this as optional, on the reasoning that the iMM-6
+arrives calibrated so nothing needs comparing. That was right about the
+microphone and wrong about the chain: the calibration file describes the
+capsule, while the Apple dongle's preamp and converter are uncharacterised.
+Comparing the two chains in the same spot is the only cheap way to catch a
+dongle high-pass or a tilt.
+
+Below 4 kHz the two microphones already agreed within position scatter, so
+that region is the test. A disagreement there is the dongle, not the
+capsule. It also still serves as a control against "different day" and
+tests the prediction that the SoloCast reads about 1.5 dB low above 6 kHz
+(`docs/targets.md`).
 
 ---
 
@@ -141,7 +172,15 @@ Put everything in `Recordings/Session5/`.
     --mic-cal imm6_cal.txt --out results/session5/baseline_pink.csv \
     --compare results/session5/baseline_sweep.csv --plot results/session5/pink_vs_sweep.png
 
-# 4. refit the three voicings
+# 4. is the dongle doing anything? compare chains in the same spot.
+#    Below 4 kHz the two mics are known to agree, so a difference there is the chain.
+.venv/bin/careq measure Recordings/Session5/solocast_same_spot.wav \
+    --stimulus stimulus/stimulus.json --out out/solocast_spot.csv
+.venv/bin/careq measure Recordings/Session5/lin_ref.wav \
+    --stimulus stimulus/stimulus.json --mic-cal imm6_cal.txt \
+    --out out/imm6_spot.csv --compare out/solocast_spot.csv --plot out/chains.png
+
+# 5. refit the three voicings
 for T in mazda_neutral mazda_warm mazda_bass; do
   .venv/bin/careq fit --measurement results/session5/baseline_sweep.csv \
       --model results/session3/eq_model.json --target $T --max-boost 4 \
@@ -169,6 +208,15 @@ done
 4. **Everything below 4 kHz** should look much like session 4. Two
    microphones already agreed there within position scatter, so a large
    change would mean something else moved.
+5. **Is the dongle flat?** In the same-spot comparison, the iMM-6 chain and
+   the SoloCast should track each other below 4 kHz once the iMM-6's
+   calibration is applied. A roll-off below 100 Hz in the iMM-6 chain that
+   the SoloCast does not show is a dongle high-pass. There is a second,
+   independent tell: measure the cabin noise in the silence before the
+   sweep starts. Real road noise rises 6-12 dB per octave below 100 Hz, so
+   a floor that is flat or falling down there means something in the chain
+   is cutting it. That is how a suspected high-pass was spotted in
+   session 1.
 
 # What does NOT need redoing
 
