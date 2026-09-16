@@ -1,5 +1,11 @@
 """Recording ingestion: sync, drift correction, deconvolution, windowing, smoothing.
 
+Two stimuli are supported. Swept sines (most of this module) give an impulse
+response, hence phase, distortion separation, windowing and large processing
+gain. Continuous pink noise (:func:`measure_noise_signal`) gives magnitude
+only, but tolerates the microphone moving during acquisition, which makes a
+continuous spatial average possible in one take.
+
 Pipeline for one recording (see :func:`measure_recording`):
 
 1. Load mono WAV, resample to the stimulus rate if the recorder used another.
@@ -466,6 +472,104 @@ def measure_files(paths: list[str | Path], spec: SweepSpec, opts: MeasureOptions
         p = Path(p)
         ms.append(Measurement.load(p) if p.suffix.lower() == ".npz" else measure_recording(p, spec, opts))
     return Measurement.combine(ms)
+
+
+# --------------------------------------------------------------------------- #
+# Continuous-noise (RTA) measurement
+# --------------------------------------------------------------------------- #
+def trim_to_signal(x: np.ndarray, fs: int, block_s: float = 0.1, drop_db: float = 20.0,
+                   guard_s: float = 0.3) -> np.ndarray:
+    """Cut leading/trailing silence from a continuous-noise recording.
+
+    Keeps the span of 100 ms blocks within ``drop_db`` of the loudest one, then
+    pulls in ``guard_s`` from each end to clear fades and the moment the play
+    button was pressed."""
+    n = int(round(block_s * fs))
+    if len(x) < 4 * n:
+        return x
+    k = len(x) // n
+    rms = np.sqrt(np.mean(x[: k * n].reshape(k, n) ** 2, axis=1) + EPS)
+    loud = rms >= rms.max() * 10 ** (-drop_db / 20)
+    if not loud.any():
+        return x
+    i0, i1 = int(np.argmax(loud)) * n, (k - int(np.argmax(loud[::-1]))) * n
+    g = int(round(guard_s * fs))
+    i0, i1 = i0 + g, i1 - g
+    return x[i0:i1] if i1 - i0 > fs else x
+
+
+def welch_psd(x: np.ndarray, fs: int, nperseg: int = 32768) -> tuple[np.ndarray, np.ndarray]:
+    nperseg = min(nperseg, len(x))
+    f, p = signal.welch(x, fs=fs, nperseg=nperseg, noverlap=nperseg // 2,
+                        window="hann", detrend=False, scaling="density")
+    return f, p
+
+
+@dataclasses.dataclass
+class NoiseMeasurement:
+    """A continuous-noise (pink) measurement: recording PSD over stimulus PSD."""
+
+    fs: int
+    f_lin: np.ndarray
+    power: np.ndarray            # recording PSD / stimulus PSD, linear
+    noise_power: np.ndarray      # same ratio for the pre-signal silence, for SNR
+    source: str = ""
+    n_files: int = 1
+
+    def response(self, frac: float = 3.0, freq: np.ndarray = LOG_GRID) -> Response:
+        return Response(freq, 10 * np.log10(frac_octave_average(self.f_lin, self.power, frac, freq) + EPS),
+                        self.source)
+
+    def snr_db(self, frac: float = 3.0, freq: np.ndarray = LOG_GRID) -> np.ndarray:
+        s = frac_octave_average(self.f_lin, self.power, frac, freq)
+        n = frac_octave_average(self.f_lin, self.noise_power, frac, freq)
+        return 10 * np.log10((s + EPS) / (n + EPS))
+
+
+def measure_noise_signal(rec: np.ndarray, fs: int, stim: np.ndarray | None = None,
+                         nperseg: int = 32768, source: str = "") -> NoiseMeasurement:
+    """Response from one continuous-noise recording.
+
+    Magnitude only: the ratio of the recording's power spectrum to the
+    stimulus's. No time alignment, so the microphone may be moved throughout,
+    which is the point -- a slow pass through the seat volume gives a
+    continuous spatial average instead of a handful of discrete positions.
+
+    Unlike a sweep this has no processing gain against steady noise, gives no
+    impulse response, no phase and no distortion separation, and cannot be
+    windowed to exclude late room energy. Use it for spatial averaging and
+    quick verification; use sweeps for identification and for anything
+    needing the time domain.
+    """
+    body = trim_to_signal(rec, fs)
+    # silence before the noise starts, for an SNR estimate
+    head = rec[: int(0.5 * fs)] if len(rec) > int(1.5 * fs) else body[:1]
+    f, p = welch_psd(body, fs, nperseg)
+    _, pn = welch_psd(head, fs, min(nperseg, max(256, len(head))))
+    pn = np.interp(f, _, pn)
+    if stim is not None:
+        fs_, ps = welch_psd(stim, fs, nperseg)
+        ps = np.interp(f, fs_, ps)
+    else:                                        # ideal pink, 1/f power
+        ps = np.where(f > 0, 1.0 / np.maximum(f, 1e-9), 1.0)
+    ratio = p / (ps + EPS)
+    return NoiseMeasurement(fs, f, ratio, pn / (ps + EPS), source)
+
+
+def measure_noise_files(paths: list[str | Path], fs: int = 48000, stim_path: str | Path | None = None,
+                        nperseg: int = 32768) -> NoiseMeasurement:
+    """Measure and pool several continuous-noise recordings (power average)."""
+    stim = None
+    if stim_path is not None:
+        stim, _ = load_wav(stim_path, fs_target=fs)
+    ms = []
+    for p in paths:
+        rec, _ = load_wav(p, fs_target=fs)
+        ms.append(measure_noise_signal(rec, fs, stim, nperseg, source=Path(p).name))
+    f = ms[0].f_lin
+    pw = np.mean([np.interp(f, m.f_lin, m.power) for m in ms], axis=0)
+    nw = np.mean([np.interp(f, m.f_lin, m.noise_power) for m in ms], axis=0)
+    return NoiseMeasurement(fs, f, pw, nw, " + ".join(m.source for m in ms), len(ms))
 
 
 def apply_mic_cal(resp: Response, cal: Response | None) -> Response:

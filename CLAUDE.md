@@ -15,7 +15,7 @@ quirks, microphone calibration and user technique do not.
 
 - Python env: `.venv/` (numpy, scipy, soundfile, matplotlib, pytest). Use
   `.venv/bin/python` and `.venv/bin/careq`; system python has none of it.
-- Tests: `.venv/bin/python -m pytest` (30 tests, ~1 min). Keep them green.
+- Tests: `.venv/bin/python -m pytest` (32 tests, ~1 min). Keep them green.
 - Recordings from the car go in `recordings/<session>/` with a
   `manifest.json` (format in `docs/procedure.md`). `*.wav`, `*.npz` and
   `recordings/` are gitignored; results (json/csv/png) may be committed.
@@ -31,6 +31,7 @@ quirks, microphone calibration and user technique do not.
 | identify | `careq identify --manifest recordings/S/manifest.json --out eq_model.json --baseline-csv baseline.csv --plot bases.png` | baseline + 13 band recordings -> basis curve and dB/step per band |
 | fit | `careq fit --measurement baseline.csv --model eq_model.json --target harman_car --plot fit.png` | -> 13 integers, predicted residual, plot |
 | iterate | `careq fit --measurement after.wav --current fit.json --model ... --target ...` | measurement made WITH the sliders set -> corrected absolute settings + change |
+| rta | `careq rta REC.wav --compare sweep.csv --out rta.csv` | continuous pink-noise recording (mic may MOVE during the take) -> same 1/3-oct CSV; magnitude only, see docs/rta.md |
 | dry run | `careq simulate --out out/sim` | synthetic car recordings (NOT a Mazda; for testing only) |
 
 Key design facts (do not re-derive):
@@ -127,7 +128,9 @@ responses) to catch ALC-class settings, which fail silently.
 2. **REW cross-check.** Still the only external validation never done.
    `careq measure --save-ir ir.wav` writes the averaged impulse response
    for import; magnitudes should agree within ~1 dB at 1/3 octave.
-3. **Omnidirectional calibrated microphone** (decided; Dayton iMM-6C ~$30,
+3. **Omnidirectional calibrated microphone** (iMM-6C ordered 2026-09-15;
+   session plan in `docs/session5_plan.md`, which also folds in the first
+   pink-noise take). Dayton iMM-6C ~$30,
    UMIK-1 ~$150, or borrow). Pattern matters more than the response curve:
    a cardioid weights arrival directions differently from an ear and no
    single calibration curve fixes that. Afterwards only the tuning baseline

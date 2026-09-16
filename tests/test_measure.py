@@ -106,3 +106,36 @@ def test_snr_estimate_is_sane(scenario, short_spec):
     band = (LOG_GRID > 100) & (LOG_GRID < 10000)
     assert np.min(snr[band]) > 20  # deconvolution gain: the estimate must not be pessimistic
     assert np.max(snr[band]) < 120
+
+
+def test_pink_noise_rta_recovers_a_known_filter():
+    """A continuous-noise measurement must recover a known magnitude response,
+    and must still do so when the 'microphone' moves during the take."""
+    import numpy as np
+    from scipy import signal as sg
+    from careq.signals import pink_noise
+    from careq.measure import measure_noise_signal, LOG_GRID
+    from careq.biquad import peaking_sos, low_shelf_sos, sos_magnitude_db
+
+    fs = 48000
+    stim = pink_noise(30.0, fs, level_dbfs=-20.0, seed=3)
+    sos = np.vstack([low_shelf_sos(120.0, 0.7, 6.0, fs),
+                     peaking_sos(400.0, 1.5, -5.0, fs),
+                     peaking_sos(3000.0, 2.0, 4.0, fs)])
+    truth = sos_magnitude_db(sos, LOG_GRID, fs)
+    rec = sg.sosfilt(sos, stim)
+    rec = np.concatenate([np.zeros(fs), rec, np.zeros(fs)])          # silence either side
+
+    got = measure_noise_signal(rec, fs, stim).response(3.0)
+    m = (LOG_GRID >= 40) & (LOG_GRID <= 16000)
+    err = (got.db - got.db[m].mean()) - (truth - truth[m].mean())
+    assert np.sqrt(np.mean(err[m] ** 2)) < 0.5, np.sqrt(np.mean(err[m] ** 2))
+    assert np.max(np.abs(err[m])) < 1.5, np.max(np.abs(err[m]))
+
+    # a slowly time-varying gain, standing in for a moving microphone, must not
+    # break it: a sweep would smear this into the frequency axis, noise averages it
+    t = np.arange(len(rec)) / fs
+    moved = rec * 10 ** (1.5 * np.sin(2 * np.pi * 0.2 * t) / 20)
+    got2 = measure_noise_signal(moved, fs, stim).response(3.0)
+    err2 = (got2.db - got2.db[m].mean()) - (truth - truth[m].mean())
+    assert np.sqrt(np.mean(err2[m] ** 2)) < 0.6, np.sqrt(np.mean(err2[m] ** 2))

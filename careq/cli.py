@@ -9,7 +9,8 @@ from pathlib import Path
 import numpy as np
 
 from .signals import SweepSpec, generate
-from .measure import (LOG_GRID, MeasureOptions, Measurement, Response, measure_files, apply_mic_cal)
+from .measure import (LOG_GRID, MeasureOptions, Measurement, Response, measure_files, apply_mic_cal,
+                      measure_noise_files)
 from .identify import identify, EqModel, DEFAULT_LABELS_HZ, N_BANDS_DEFAULT
 from .fit import (fit_eq, load_target, list_targets, plot_fit, default_weights, erb_weights,
                   DEFAULT_GAIN_SCALE)
@@ -84,6 +85,38 @@ def cmd_measure(args) -> int:
         print(f"wrote {args.save_ir} (import in REW: File > Import > Import impulse response)")
     if args.plot:
         _plot_response([resp], args.plot, "Measured response (1/%g oct)" % args.smooth)
+        print(f"wrote {args.plot}")
+    return 0
+
+
+def cmd_rta(args) -> int:
+    """Continuous pink-noise measurement: magnitude only, mic may move."""
+    m = measure_noise_files(args.recording, fs=args.fs, stim_path=args.stimulus_wav, nperseg=args.nperseg)
+    snr = m.snr_db(args.smooth)
+
+    def at(f):
+        return snr[int(np.argmin(np.abs(LOG_GRID - f)))]
+
+    print(f"{m.source}: {m.n_files} file(s), {args.nperseg} pt Welch")
+    print(f"  SNR@50/100/1k/10k: {at(50):.0f}/{at(100):.0f}/{at(1000):.0f}/{at(10000):.0f} dB")
+    if not args.stimulus_wav:
+        print("  NOTE: no --stimulus-wav given, assuming ideal 1/f; band edges will be wrong")
+    resp = m.response(args.smooth)
+    if args.mic_cal:
+        resp = apply_mic_cal(resp, Response.from_csv(args.mic_cal))
+    resp.to_csv(args.out)
+    print(f"wrote {args.out}")
+    if args.plot:
+        series = [resp]
+        if args.compare:
+            other = Response.from_csv(args.compare, "sweep")
+            n = resp.normalized(); o = other.interp(LOG_GRID).normalized()
+            series = [Response(LOG_GRID, n.db, "pink noise"), Response(LOG_GRID, o.db, Path(args.compare).stem)]
+            m_ = (LOG_GRID >= 40) & (LOG_GRID <= 16000)
+            d = n.db - o.db
+            print(f"  vs {Path(args.compare).name}: rms difference 40 Hz-16 kHz {np.sqrt(np.mean(d[m_] ** 2)):.2f} dB, "
+                  f"max {np.max(np.abs(d[m_])):.2f} dB at {LOG_GRID[m_][np.argmax(np.abs(d[m_]))]:.0f} Hz")
+        _plot_response(series, args.plot, "Pink-noise response (1/%g oct)" % args.smooth)
         print(f"wrote {args.plot}")
     return 0
 
@@ -340,6 +373,19 @@ def build_parser() -> argparse.ArgumentParser:
     f.add_argument("--plot", default="fit.png")
     _add_measure_args(f)
     f.set_defaults(func=cmd_fit)
+
+    r = sub.add_parser("rta", help="continuous pink-noise measurement (mic may move; magnitude only)")
+    r.add_argument("recording", nargs="+", help="pink-noise recording WAV(s); pooled if several")
+    r.add_argument("--stimulus-wav", default="stimulus/careq_pink_48k_60s.wav",
+                   help="the pink-noise WAV that was played (its spectrum is divided out)")
+    r.add_argument("--fs", type=int, default=48000)
+    r.add_argument("--nperseg", type=int, default=32768, help="Welch segment length")
+    r.add_argument("--smooth", type=float, default=3.0, help="fractional-octave smoothing, 1/N")
+    r.add_argument("--mic-cal", help="mic calibration text file (UMIK-1 / REW format)")
+    r.add_argument("--compare", help="overlay a sweep-derived CSV and report the difference")
+    r.add_argument("--out", default="rta.csv")
+    r.add_argument("--plot")
+    r.set_defaults(func=cmd_rta)
 
     s = sub.add_parser("simulate", help="write synthetic recordings of a known car for a dry run")
     s.add_argument("--out", default="sim")
