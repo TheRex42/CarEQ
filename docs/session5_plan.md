@@ -1,8 +1,9 @@
 # Session 5 — calibrated microphone, simplified
 
 Dayton iMM-6 (TRRS) through an Apple USB-C dongle into the phone, with a
-USB-C extension on the long run. **7 files and about 15 minutes**, or
-14 files and 27 minutes with the optional four-band confirmation.
+USB-C extension on the long run. **7 files and about 13 minutes in the
+car**, or 14 files and 25 minutes with the optional four-band
+confirmation, plus 10 minutes of checks at the desk beforehand.
 
 This is a deliberate simplification of an earlier 14-file draft, and it is
 also a return to what `docs/procedure.md` specified from the beginning:
@@ -245,14 +246,15 @@ done
 
 # Order and timing
 
-| part | files | minutes | needed? |
+| part | files kept | minutes | needed? |
 |---|---|---|---|
-| desk checks | 1, discarded | 10 | yes |
+| desk checks (not in the car) | 0 | 10 | yes |
 | 0 — volume reference | 0 | 3 | yes |
 | 1 — fixed-position diagnostics | 4 | 5 | yes |
 | 1b — four-band confirmation | 7 | 12 | optional |
-| **total** | **7, or 14 with 1b** | **23, or 35 with 1b** | |
 | 2 — moving-mic baseline | 3 | 5 | yes |
+| **in the car, without 1b** | **7** | **13** | |
+| **in the car, with 1b** | **14** | **25** | |
 
 Parts 1 and 1b share the same microphone position, so do them together and
 do not touch the microphone until Part 2. Part 2 is hand-held, so it can
