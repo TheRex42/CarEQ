@@ -1,7 +1,8 @@
 # Session 5 — calibrated microphone, simplified
 
 Dayton iMM-6 (TRRS) through an Apple USB-C dongle into the phone, with a
-USB-C extension on the long run. **About 15 minutes, 8 files.**
+USB-C extension on the long run. **7 files and about 15 minutes**, or
+14 files and 27 minutes with the optional four-band confirmation.
 
 This is a deliberate simplification of an earlier 14-file draft, and it is
 also a return to what `docs/procedure.md` specified from the beginning:
@@ -106,6 +107,41 @@ Four files, four questions, each answered by a pair:
 | `fix_sweep_ref` vs `fix_solocast` | is the dongle shaping anything below 4 kHz? |
 | all of them | the microphone never moved, so every difference is real |
 
+## Part 1b — four-band confirmation (12 minutes, 7 files). Optional.
+
+**Microphone stays exactly where Part 1 left it.** If it has moved, this is
+worthless; re-seat it and start Part 1 again.
+
+Four bands and three baselines, interleaved so the level drift of about
+1 dB per session can be removed:
+
+```
+id_base1.wav      all sliders 0
+id_b01_p9.wav     band 1 (40 Hz) at +9, everything else 0
+id_b05_p9.wav     band 5 (250 Hz) at +9
+id_base2.wav      all sliders 0
+id_b09_p9.wav     band 9 (2.5 kHz) at +9
+id_b13_p9.wav     band 13 (16 kHz) at +9
+id_base3.wav      all sliders 0
+```
+
+**Why four and not thirteen.** Measured after the fact from the finished
+model, bands 1, 5, 9 and 13 plus a baseline reproduce the full 13-band
+model within one step and 0.02 dB of delivered error (`docs/method.md`).
+That was computed retrospectively and has never been tested by actually
+recording only four.
+
+**Why bother at all.** The band model is a ratio of two recordings through
+one microphone, so the microphone cancels and the model should be unchanged
+by any of this. That claim carries a great deal of weight in this project:
+it is why the model survives a new microphone, why identification would be
+the shareable half if this were ever generalised, and why re-identification
+is not on the roadmap. It is sound theory that has never been checked
+against a genuinely different microphone. These five recordings check it.
+
+**Skip it** if Part 1's diagnostics came back clean and you would rather
+have the time. It confirms something, it does not enable anything.
+
 ## Part 2 — the baseline: moving microphone, occupied seat (5 minutes, 3 files)
 
 Sit in the driver's seat in normal posture. Play the pink file. Hold the
@@ -147,6 +183,25 @@ Recordings in `Recordings/Session5/`.
     --stimulus stimulus/stimulus.json --mic-cal imm6_cal.txt \
     --out out/imm6.csv --compare out/solocast.csv --plot out/chains.png
 
+# optional: does the band model come out the same through a different mic?
+.venv/bin/cat > Recordings/Session5/manifest.json <<'JSON'
+{
+  "stimulus": "../../stimulus/stimulus.json",
+  "baseline": ["id_base1.wav", "id_base2.wav", "id_base3.wav"],
+  "bands": [
+    {"band": 1,  "steps": 9, "files": ["id_b01_p9.wav"]},
+    {"band": 5,  "steps": 9, "files": ["id_b05_p9.wav"]},
+    {"band": 9,  "steps": 9, "files": ["id_b09_p9.wav"]},
+    {"band": 13, "steps": 9, "files": ["id_b13_p9.wav"]}
+  ],
+  "labels_hz": [40, 63, 100, 160, 250, 500, 1000, 1600, 2500, 4000, 6300, 10000, 16000]
+}
+JSON
+.venv/bin/careq identify --manifest Recordings/Session5/manifest.json \
+    --out out/model_imm6.json --plot out/bases_imm6.png
+# then compare the four measured bases against results/session3/eq_model.json:
+# centres within a few %, Q within ~0.3, dB/step within ~0.05
+
 # THE BASELINE
 mkdir -p results/session5
 .venv/bin/careq rta Recordings/Session5/move*.wav --mic-cal imm6_cal.txt \
@@ -179,6 +234,29 @@ done
    converged, which is why there are three and why the paths differ.
 5. **The treble bands.** Does the calibrated fit land near the by-ear
    **-4 -4 -2**? Agreement settles the neutral profile.
+6. **If Part 1b was done: do the four bases match the existing model?**
+   Centres within a few per cent, Q within about 0.3, dB per step within
+   about 0.05. Agreement is the first empirical confirmation that the
+   microphone really does cancel out of a basis, which the whole
+   architecture rests on. Disagreement would be far more interesting and
+   would mean the ratio is not cancelling something it should, so check the
+   level-offset warnings and whether the microphone moved before believing
+   it.
+
+# Order and timing
+
+| part | files | minutes | needed? |
+|---|---|---|---|
+| desk checks | 1, discarded | 10 | yes |
+| 0 — volume reference | 0 | 3 | yes |
+| 1 — fixed-position diagnostics | 4 | 5 | yes |
+| 1b — four-band confirmation | 7 | 12 | optional |
+| **total** | **7, or 14 with 1b** | **23, or 35 with 1b** | |
+| 2 — moving-mic baseline | 3 | 5 | yes |
+
+Parts 1 and 1b share the same microphone position, so do them together and
+do not touch the microphone until Part 2. Part 2 is hand-held, so it can
+only come last.
 
 # What this gives up, honestly
 
