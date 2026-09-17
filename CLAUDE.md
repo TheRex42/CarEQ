@@ -132,8 +132,10 @@ responses) to catch ALC-class settings, which fail silently.
    `careq measure --save-ir ir.wav` writes the averaged impulse response
    for import; magnitudes should agree within ~1 dB at 1/3 octave.
 3. **Omnidirectional calibrated microphone.** Dayton iMM-6C ordered
-   2026-09-15; `docs/session5_plan.md` has the session, which also folds in
-   the first pink-noise take. Pattern matters more than the response curve:
+   2026-09-15; `docs/session5_plan.md` has the session: 8 files, ~15 min,
+   diagnostics at one fixed position then a hand-held moving-mic pink
+   baseline from the occupied driver's seat, which is what
+   `docs/procedure.md` specified all along. Pattern matters more than the response curve:
    a cardioid weights arrival directions differently from an ear and no
    single calibration curve fixes that. Afterwards only the tuning baseline
    needs redoing (9 recordings + refit); the band model is a ratio through

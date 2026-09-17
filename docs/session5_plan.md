@@ -1,257 +1,197 @@
-# Session 5 — calibrated microphone, volume reference, pink noise
+# Session 5 — calibrated microphone, simplified
 
-For when the Dayton iMM-6 arrives (TRRS, through an Apple USB-C dongle).
-About 20 minutes in the car, 14 files.
-Everything learned so far is folded in, so this supersedes earlier drafts.
+Dayton iMM-6 (TRRS) through an Apple USB-C dongle into the phone, with a
+USB-C extension on the long run. **About 15 minutes, 8 files.**
 
-The microphone is omnidirectional with an individual calibration file, which
-fixes both problems with the SoloCast at once: the unknown response and,
-more importantly, the cardioid pattern that weights arrival directions
-differently from an ear.
+This is a deliberate simplification of an earlier 14-file draft, and it is
+also a return to what `docs/procedure.md` specified from the beginning:
+a hand-held tuning baseline taken from the occupied driver's seat. Session 4
+only deviated from that because the SoloCast came with a stand and clamping
+it was easy. The iMM-6 is awkward to clamp and easy to hold, which points
+back at the original design.
+
+## What the session actually has to produce
+
+Only two things.
+
+1. **A tuning baseline** at the driver's listening position, calibrated.
+2. **Confidence the chain is sane**: the right microphone is selected, the
+   volume is in the linear region, and the dongle is not shaping the signal.
+
+The 13-band model is **not** one of them. It is a ratio of two recordings
+through one microphone, so the microphone cancels and
+`results/session3/eq_model.json` is already correct. Nothing about the new
+microphone, the dongle, or the seat being occupied changes it.
+
+## Where the simplification comes from
+
+The nine clamped sweep positions existed to average over space. A pink-noise
+run with the microphone moving does that better and continuously, and wants
+the microphone hand-held. So the clamp is only needed where the microphone
+must hold still, which is the diagnostics, and those all happen at a single
+position.
 
 ---
 
-# Before going out (at the desk, 10 minutes)
+# At the desk first (10 minutes)
 
-**0. Confirm the whole chain works, and that it is actually recording the
-iMM-6.** Apple's USB-C dongle is a standard USB audio device and generally
-works on Android, but this is a new front end and the failure mode is
-silent: the recording app falls back to the phone's built-in microphone and
-gives you a perfectly good-looking file that is 21 dB hot at 12.5 kHz
-(`docs/microphone.md`).
+**1. Test the whole chain, assembled exactly as it will be used, USB-C
+extension included.** The extension is the component most likely to
+misbehave, since USB-C extension cables are out of specification.
 
-Plug everything in **exactly as it will be used in the car, USB-C extension
-included**, and test that arrangement rather than a simplified one. The
-extension is the most likely component to misbehave: USB-C extension cables
-are technically out of specification and some are unreliable, so find out
-now and not in the driveway. Record ten seconds and **tap the iMM-6
-capsule** while recording. If the taps are loud and obvious you are on the external
-microphone. If they are faint, the app is on the internal one, and no
-setting in this plan will save the session. Check the app's input selector
-and its audio source setting; unprocessed or voice-recognition, never the
-default.
+Record ten seconds and **tap the iMM-6 capsule**. Loud, obvious taps mean
+you are on the external microphone. Faint ones mean the app fell back to the
+phone's built-in microphone, which is 21 dB hot at 12.5 kHz
+(`docs/microphone.md`) and would waste the session silently. Check the
+input selector and set the audio source to unprocessed or voice recognition,
+never the default.
 
-**1. Download the calibration file** by serial number from Dayton's site.
-Keep it with the recordings as `imm6_cal.txt`.
-
-**2. Check careq can read the calibration file and that the sign is right.** This is the one
-thing that silently doubles the error instead of removing it.
+**2. Download the calibration file** by serial number, keep it as
+`imm6_cal.txt`, and check careq reads it and that the sign is right:
 
 ```
 .venv/bin/python -c "
-import sys; sys.path.insert(0,'.')
+import sys, numpy as np; sys.path.insert(0,'.')
 from careq.measure import Response
 c = Response.from_csv('imm6_cal.txt')
 print(len(c.freq), 'points,', c.freq.min(), '-', c.freq.max(), 'Hz')
 for f in (30, 100, 1000, 5000, 10000, 16000):
-    import numpy as np; print(f, round(float(np.interp(f, c.freq, c.db)), 2), 'dB')"
+    print(f, round(float(np.interp(f, c.freq, c.db)), 2), 'dB')"
 ```
 
-Expect a smooth curve within a few dB, typically rising a little in the top
-octaves. The convention is that the file states the **microphone's own
-response** and careq subtracts it, so a mic that reads hot at 10 kHz has a
-positive value there and the corrected measurement comes out lower. If
-applying it makes the car look *brighter*, the sign is inverted.
-
-**3. The recording chain, not just the microphone.** The unit here is the
-TRRS iMM-6 going through an Apple USB-C dongle. Two consequences:
-
-- **The calibration file covers the microphone only.** The dongle contains
-  the preamp and the analogue-to-digital converter, and its input response
-  is not characterised by anyone. Headset inputs are commonly high-passed,
-  which is exactly the kind of uncalibrated element this session exists to
-  remove. Part 4 is therefore **not optional any more**; it is the check on
-  the dongle.
-- **The host is the phone, as it has been all along.** The SoloCast has
-  gone into the phone over USB-C for every session; there is no laptop.
-  That chain has behaved: three sweeps inside a file agree to 0.03-0.09 dB,
-  and the noise floor holds flat through the gaps between them, neither of
-  which survives an automatic gain control. The evidence is empirical
-  rather than assumed, and it applies to the USB path specifically.
-- **What is new is the analogue front end.** The SoloCast did its own
-  conversion and presented USB audio to the phone. The iMM-6 hands an
-  analogue signal to the Apple dongle, which does the conversion. Whatever
-  the dongle's preamp does is now in the measurement, and the calibration
-  file does not describe it.
-
-**4. Cable reach.** The iMM-6's lead is short and the mic has to sit on the
-driver's headrest while you work from the passenger seat, moving it to nine
-positions.
-
-- **Extend on the USB side, not the analogue side**: the USB-C extension
-  goes between the dongle and the phone, so the chain is capsule, short
-  TRRS lead, dongle, extension, phone. Digital across the long run, so
-  nothing degrades, and the dongle ends up about a metre from the capsule
-  on the seat rather than next to it.
-- If you must extend the 3.5 mm side, the cable has to be **4-pole TRRS**.
-  An ordinary 3-pole headphone extension has no ring for the microphone and
-  will simply not work, or will work intermittently.
-- **Put the phone down, do not hold it.** Start the recording, then set the
-  phone on the driver's seat or the console, below the capsule and 50 cm or
-  more away, before touching the microphone. A phone held 20 cm from the
-  capsule is a reflector and shows up above a few kHz. This matters more
-  than it did with the SoloCast, because now the recorder has to sit near
-  the microphone rather than wherever was convenient.
+A smooth curve within a few dB, typically rising a little up top. The file
+states the **microphone's own response** and careq subtracts it, so a mic
+that reads hot at 10 kHz is positive there and the corrected measurement
+comes out lower. If applying it makes the car look brighter, it is inverted.
 
 ---
 
 # In the car
 
-Head unit: **ALC off**, fader and balance centred, all 13 sliders at 0.
-Bass and Treble are unavailable while Customize EQ is selected. Engine off,
-accessory mode, HVAC off, doors shut. Recorder: mono WAV, fixed gain, no
-processing, running 3 s past the end of every file.
+ALC **off**, fader and balance centred, all 13 sliders at 0. Bass and Treble
+are unavailable while Customize EQ is selected. Engine off, accessory mode,
+HVAC off, doors shut. Recorder: mono WAV, fixed gain, no processing, running
+3 s past the end of every file.
 
-Microphone clipped to the **driver's** headrest, driver's seat empty, you in
-the passenger seat, aimed consistently and not rotated between files.
-
-## Part 0 — set the volume reference (5 minutes, 1 file)
+## Part 0 — volume reference (3 minutes)
 
 Play `stimulus/careq_pink_48k_60s.wav`. With an SPL meter or phone app at
-the driver's head position, set the head unit so it reads **75 dB, C
-weighted, slow**. Write down the Mazda volume number. Sessions 1-4 used 25;
-if the new number is close to that, everything stays directly comparable.
+the driver's head position, set the head unit to read **75 dB, C weighted,
+slow**. Note the Mazda number. Sessions 1-4 used 25.
 
-Record one pink file at this setting while you are there:
+The sweep file runs 5.0 dB hotter than the pink file at the same setting, so
+expect about 80 dB during sweeps (`docs/level.md`). Check the recorder peaks
+near -12 dBFS on a sweep and never clips.
 
-```
-pink_ref.wav
-```
+## Part 1 — the fixed-position block (5 minutes, 4 files)
 
-Check the recorder peaks near -12 dBFS during a sweep and never clip. The
-sweep file runs 5.0 dB hotter than the pink file at the same volume, so
-expect roughly 80 dB during sweeps (`docs/level.md`).
-
-## Part 1 — level-linearity check (3 minutes, 2 files)
-
-The gate. Everything after this assumes the system is linear at the chosen
-volume, and two sessions were once misread because it was not.
-
-Microphone clamped, not moved between these two.
+**One position, four recordings, do not touch the microphone between them.**
+This is the only part that needs the microphone held still, so prop it,
+wedge it against the headrest with a towel, or use any small stand. Put it
+roughly where a driver's ear would be.
 
 ```
-lin_ref.wav      sweep at the reference volume   (this is also baseline position 1)
-lin_loud.wav     sweep about 6 dB louder (roughly 6 volume steps up)
+fix_sweep_ref.wav       sweep at the reference volume
+fix_sweep_loud.wav      sweep about 6 dB louder, then return the volume
+fix_pink_ref.wav        pink noise at the reference volume
+fix_solocast.wav        SoloCast swapped into the identical spot, one sweep
 ```
 
-Then return the volume to the reference and leave it there.
+Four files, four questions, each answered by a pair:
 
-## Part 2 — sweep baseline (6 minutes, 8 more files)
+| pair | question |
+|---|---|
+| `fix_sweep_ref` vs `fix_sweep_loud` | is the volume in the linear region, or is the limiter active? |
+| `fix_sweep_ref` vs `fix_pink_ref` | do sweeps and pink noise agree in this car? |
+| `fix_sweep_ref` vs `fix_solocast` | is the dongle shaping anything below 4 kHz? |
+| all of them | the microphone never moved, so every difference is real |
 
-Eight further positions around the driver's headrest, spread about 20 cm in
-each direction, same spread as session 4 so the result is comparable with
-`results/session4/baseline_pooled_18.csv`. With `lin_ref.wav` that is nine.
+## Part 2 — the baseline: moving microphone, occupied seat (5 minutes, 3 files)
 
-```
-base2.wav ... base9.wav
-```
-
-## Part 3 — pink noise, moving microphone (3 minutes, 2 files)
-
-Play the pink file. Start the recorder, wait a second, then move the
-microphone **slowly and continuously** through the same volume the nine
-sweep positions covered, for the full minute. Keep it pointing the same way.
-Two takes.
+Sit in the driver's seat in normal posture. Play the pink file. Hold the
+iMM-6 at ear height, **10-20 cm from your head**, capsule up, and move it
+slowly and continuously through the volume your head occupies for the full
+minute. Three takes, and deliberately vary the path between them: one
+favouring left and right, one forward and back, one high and low.
 
 ```
-pink1.wav  pink2.wav
+move1.wav  move2.wav  move3.wav
 ```
 
-## Part 4 — SoloCast cross-check (1 minute, 1 file). Now required.
-
-Swap the SoloCast into the identical clamp position and record one sweep.
-
-```
-solocast_same_spot.wav
-```
-
-An earlier draft had this as optional, on the reasoning that the iMM-6
-arrives calibrated so nothing needs comparing. That was right about the
-microphone and wrong about the chain: the calibration file describes the
-capsule, while the Apple dongle's preamp and converter are uncharacterised.
-Comparing the two chains in the same spot is the only cheap way to catch a
-dongle high-pass or a tilt.
-
-Below 4 kHz the two microphones already agreed within position scatter, so
-that region is the test. A disagreement there is the dongle, not the
-capsule. It also still serves as a control against "different day" and
-tests the prediction that the SoloCast reads about 1.5 dB low above 6 kHz
-(`docs/targets.md`).
+Do not strap it to your head. The target curves assume a microphone at the
+listening position, not at the ear. Keep your hand below and behind the
+capsule, not beside it, and move slowly enough that you hear no rustle.
 
 ---
 
 # Processing
 
-Put everything in `Recordings/Session5/`.
+Recordings in `Recordings/Session5/`.
 
 ```
-# 1. the gate: shape must not change with level
-.venv/bin/careq measure Recordings/Session5/lin_loud.wav \
-    --stimulus stimulus/stimulus.json --out out/lin_loud.csv
-.venv/bin/careq measure Recordings/Session5/lin_ref.wav \
-    --stimulus stimulus/stimulus.json --out out/lin_ref.csv \
-    --compare out/lin_loud.csv --plot out/linearity.png
+# the linearity gate: shape must not change with level
+.venv/bin/careq measure Recordings/Session5/fix_sweep_loud.wav \
+    --stimulus stimulus/stimulus.json --out out/loud.csv
+.venv/bin/careq measure Recordings/Session5/fix_sweep_ref.wav \
+    --stimulus stimulus/stimulus.json --out out/ref.csv \
+    --compare out/loud.csv --plot out/linearity.png
 
-# 2. pooled sweep baseline, calibrated
-.venv/bin/careq measure Recordings/Session5/lin_ref.wav Recordings/Session5/base*.wav \
+# sweeps vs pink, same spot, same minute
+.venv/bin/careq rta Recordings/Session5/fix_pink_ref.wav \
+    --out out/fix_pink.csv --compare out/ref.csv --plot out/pink_vs_sweep.png
+
+# is the dongle flat? below 4 kHz the two mics are known to agree
+.venv/bin/careq measure Recordings/Session5/fix_solocast.wav \
+    --stimulus stimulus/stimulus.json --out out/solocast.csv
+.venv/bin/careq measure Recordings/Session5/fix_sweep_ref.wav \
     --stimulus stimulus/stimulus.json --mic-cal imm6_cal.txt \
-    --out results/session5/baseline_sweep.csv --plot results/session5/baseline_sweep.png
+    --out out/imm6.csv --compare out/solocast.csv --plot out/chains.png
 
-# 3. moving-mic pink noise, calibrated, against the sweeps
-.venv/bin/careq rta Recordings/Session5/pink1.wav Recordings/Session5/pink2.wav \
-    --mic-cal imm6_cal.txt --out results/session5/baseline_pink.csv \
-    --compare results/session5/baseline_sweep.csv --plot results/session5/pink_vs_sweep.png
+# THE BASELINE
+mkdir -p results/session5
+.venv/bin/careq rta Recordings/Session5/move*.wav --mic-cal imm6_cal.txt \
+    --out results/session5/baseline.csv --plot results/session5/baseline.png
 
-# 4. is the dongle doing anything? compare chains in the same spot.
-#    Below 4 kHz the two mics are known to agree, so a difference there is the chain.
-.venv/bin/careq measure Recordings/Session5/solocast_same_spot.wav \
-    --stimulus stimulus/stimulus.json --out out/solocast_spot.csv
-.venv/bin/careq measure Recordings/Session5/lin_ref.wav \
-    --stimulus stimulus/stimulus.json --mic-cal imm6_cal.txt \
-    --out out/imm6_spot.csv --compare out/solocast_spot.csv --plot out/chains.png
-
-# 5. refit the three voicings
+# refit
 for T in mazda_neutral mazda_warm mazda_bass; do
-  .venv/bin/careq fit --measurement results/session5/baseline_sweep.csv \
+  .venv/bin/careq fit --measurement results/session5/baseline.csv \
       --model results/session3/eq_model.json --target $T --max-boost 4 \
       --out results/session5/fit_$T.json --plot results/session5/fit_$T.png
 done
 ```
 
----
-
 # What to look for, in order
 
-1. **Linearity gate.** `lin_ref` against `lin_loud`, level removed from
-   both, should agree within about 1 dB. A shape difference, especially the
-   bass flattening at the louder setting, means the limiter is active;
+1. **Linearity.** The two volumes, level removed, should agree within about
+   1 dB. Bass flattening at the louder setting means the limiter is active:
    drop the reference volume 3 or 4 steps and redo Parts 0 and 1.
-2. **Pink against sweeps.** Should agree within about 1 dB, the
-   repeatability of a multi-position average. The synthetic car puts them
-   at 0.04 dB, because a car decays in 25 ms against a 500 ms analysis
-   window. Disagreement is diagnostic, not noise: suspect level-dependent
-   behaviour or a microphone that moved during a sweep.
-3. **The treble bands.** Does the calibrated fit land near the by-ear
-   **-4 -4 -2**? If so, two independent methods agree and the neutral
-   profile is settled. If not, the gap is preference versus accuracy, which
-   is worth knowing on its own.
-4. **Everything below 4 kHz** should look much like session 4. Two
-   microphones already agreed there within position scatter, so a large
-   change would mean something else moved.
-5. **Is the dongle flat?** In the same-spot comparison, the iMM-6 chain and
-   the SoloCast should track each other below 4 kHz once the iMM-6's
-   calibration is applied. A roll-off below 100 Hz in the iMM-6 chain that
-   the SoloCast does not show is a dongle high-pass. There is a second,
-   independent tell: measure the cabin noise in the silence before the
-   sweep starts. Real road noise rises 6-12 dB per octave below 100 Hz, so
-   a floor that is flat or falling down there means something in the chain
-   is cutting it. That is how a suspected high-pass was spotted in
-   session 1.
+2. **Pink against sweep, same spot.** Should agree closely, since both see
+   the same static position. The synthetic car puts them at 0.04 dB. This is
+   the first real-car test of the pink path and it gates everything in
+   Part 2.
+3. **Dongle.** The iMM-6 chain and the SoloCast should track below 4 kHz
+   once the calibration is applied. A roll-off under 100 Hz that the
+   SoloCast does not show is a dongle high-pass. Second tell: cabin noise in
+   the pre-sweep silence should rise 6-12 dB per octave below 100 Hz, and a
+   flat or falling floor means something is cutting it.
+4. **The three moving takes against each other.** They should agree within
+   about 1 dB. That is the only available check that the spatial average has
+   converged, which is why there are three and why the paths differ.
+5. **The treble bands.** Does the calibrated fit land near the by-ear
+   **-4 -4 -2**? Agreement settles the neutral profile.
 
-# What does NOT need redoing
+# What this gives up, honestly
 
-The 13-band model. It is a ratio of two recordings through one microphone,
-so the microphone cancels and `results/session3/eq_model.json` is already
-correct. The cancellation covers any fixed linear element, microphone,
-cabin and position alike, and any constant gain. It does not cover
-level-dependent behaviour, which is why ALC broke it and why Part 1 exists.
+No nine-position clamped sweep baseline, so the new baseline is **not**
+directly comparable with session 4's. It differs by microphone, by method,
+and by the seat now being occupied, and those cannot be separated after the
+fact. Expect the bass especially to move, since a body in the seat absorbs.
+
+That is an acceptable trade because the goal is the right answer, not an
+attributable difference. The one comparison worth preserving is preserved:
+Part 1 puts both microphones in the same spot in the same minute, so the
+chain can still be checked in isolation.
+
+Session 4's baseline stays on disk as a rough reference. If the new one
+looks wildly unlike it below 4 kHz, something went wrong rather than
+something changed.
