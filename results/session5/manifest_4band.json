@@ -1,0 +1,11 @@
+{
+  "stimulus": "../../stimulus/stimulus.json",
+  "baseline": ["baseline.wav", "baseline2.wav"],
+  "bands": [
+    {"band": 1,  "steps": 9, "files": ["B1P9.wav"]},
+    {"band": 5,  "steps": 9, "files": ["B5P9.wav"]},
+    {"band": 9,  "steps": 9, "files": ["B9P9.wav"]},
+    {"band": 13, "steps": 9, "files": ["B13P9.wav"]}
+  ],
+  "labels_hz": [40, 63, 100, 160, 250, 500, 1000, 1600, 2500, 4000, 6300, 10000, 16000]
+}

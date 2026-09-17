@@ -59,7 +59,11 @@ def level_offset_db(basis: np.ndarray, freq: np.ndarray = LOG_GRID, f_lo: float 
 
 def fit_peaking(freq: np.ndarray, db: np.ndarray, fc0: float | None = None, fs: int = 48000) -> dict:
     """Describe a measured basis as one digital peaking filter (at ``fs``):
-    {fc, q, gain_db, rms_err_db}. Diagnostic only; the fit uses the measured curve."""
+    {fc, q, gain_db, rms_err_db}. Diagnostic only; the fit uses the measured curve.
+
+    Pass only the frequencies you trust. Including regions where the basis is
+    noise-dominated (below ~40 Hz) or outside the analysis band (above 16 kHz)
+    pulls the fitted centre and Q a long way for the outermost bands."""
     i = int(np.argmax(np.abs(db)))
     fc0 = fc0 or float(freq[i])
     g0 = float(db[i])
@@ -209,7 +213,13 @@ def identify(baseline: Measurement, runs: list[tuple[int, int, Measurement]], n_
             band.checks.append({"warning": f"level offset {off:+.2f} dB vs baseline - volume or recorder gain "
                                            f"changed, or the mic moved; check the basis shape"})
             level_warnings.append(idx + 1)
-        band.shape = fit_peaking(LOG_GRID, basis / steps0 * 9)
+        # Fit the peaking description over the trusted band only. Over the full
+        # 20 Hz-20 kHz grid the 20-40 Hz region, where SNR can be 30 dB and the
+        # ratio is mostly noise, drags band 1's fitted centre and Q badly (26 Hz
+        # / Q 0.65 against 38 Hz / Q 1.87 when restricted), and above 16 kHz does
+        # the same to band 13. Diagnostic only, but it is the table people read.
+        in_range = (LOG_GRID >= check_range[0]) & (LOG_GRID <= check_range[1])
+        band.shape = fit_peaking(LOG_GRID[in_range], (basis / steps0 * 9)[in_range])
         per_step = basis / steps0
         i_pk = int(np.argmax(np.abs(basis[(LOG_GRID >= check_range[0]) & (LOG_GRID <= check_range[1])])))
         f_pk = LOG_GRID[(LOG_GRID >= check_range[0]) & (LOG_GRID <= check_range[1])][i_pk]
