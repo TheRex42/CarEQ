@@ -131,17 +131,19 @@ responses) to catch ALC-class settings, which fail silently.
 2. **REW cross-check.** Still the only external validation never done.
    `careq measure --save-ir ir.wav` writes the averaged impulse response
    for import; magnitudes should agree within ~1 dB at 1/3 octave.
-3. **Omnidirectional calibrated microphone.** Dayton iMM-6C ordered
-   2026-09-15; `docs/session5_plan.md` has the session: 8 files, ~15 min,
-   diagnostics at one fixed position then a hand-held moving-mic pink
+3. **Omnidirectional calibrated microphone.** Dayton iMM-6 (TRRS) ordered
+   2026-09-15, through an Apple USB-C dongle into the phone, USB-C
+   extension on the long run. `docs/session5_plan.md`: 8 files, ~15 min,
+   four diagnostics at one fixed position then a hand-held moving-mic pink
    baseline from the occupied driver's seat, which is what
-   `docs/procedure.md` specified all along. Pattern matters more than the response curve:
-   a cardioid weights arrival directions differently from an ear and no
-   single calibration curve fixes that. Afterwards only the tuning baseline
-   needs redoing (9 recordings + refit); the band model is a ratio through
-   one mic and is unaffected. Expected gain 0.0-0.6 dB weighted, but bands
-   11-13 could move several steps, and the by-ear result predicts the
-   SoloCast reads ~1.5 dB low above 6 kHz (`docs/targets.md`).
+   `docs/procedure.md` specified all along. Pattern matters more than the
+   response curve: a cardioid weights arrival directions differently from
+   an ear and no single calibration curve fixes that. The band model does
+   NOT need redoing; only the baseline does. Expected gain 0.0-0.6 dB
+   weighted, but bands 11-13 could move several steps, and the by-ear
+   result predicts the SoloCast reads ~1.5 dB low above 6 kHz
+   (`docs/targets.md`). The Dayton cal file describes the capsule only, not
+   the dongle, which is why the SoloCast same-spot sweep is in the plan.
 4. **Subwoofer** for the low bass, which no EQ can reach: 25-45 Hz is
    ~11 dB under target and the doors are 10 dB down by 48 Hz. Cross at
    50-60 Hz, NOT the usual 80, which would feed the +13.8 dB hump at 83 Hz.
