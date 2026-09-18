@@ -27,9 +27,26 @@ It stops being irrelevant at both ends:
 
 ## The recommendation
 
-**Set it with the pink noise file, to 75 dB SPL, C-weighted, slow, at the
-driver's head position.** Then note which Mazda volume number that is and
-use that number for everything.
+**Use Mazda volume 25**, the value every session from 1 to 4 used and the
+one behind a result validated end to end. For the record, note what the pink
+file reads there; expect somewhere around 65 dB C-slow.
+
+### An earlier version of this page got this wrong
+
+It said to set 75 dB on the pink file. On this car that turned out to be
+volume 50, about 11 dB above where every previous session sat, and it
+tripled the distortion: 7.5 % at 40 Hz against 2.2 %.
+
+The error was specifying the level with pink noise and then playing sweeps
+at the same volume. Pink spreads its energy over the whole spectrum, so a
+75 dB broadband reading is only about 60 dB in any one third-octave band. A
+sweep puts *all* of its energy at one frequency at a time, so at the same
+volume it asks the woofer for the full 80 dB at 40 Hz alone. Same meter
+reading, roughly 20 dB more demand on the driver.
+
+A pink SPL number therefore does not bound what a sweep asks of the
+speakers and must not be used on its own to pick a measurement volume. The
+volume number plus the linearity check is what actually constrains it.
 
 Pink noise rather than sweeps because SPL meters are built for steady
 broadband signals and a sweep's reading wanders. The two stimulus files are
@@ -45,10 +62,14 @@ setting.** Set 75 dB on pink and the sweep will produce about 80 dB. Either
 is a fine reference as long as it is stated; this document means the pink
 one.
 
-75 dB is a common measurement reference, sits near real in-car listening
-levels, and leaves headroom before the limiter. A phone SPL app is accurate
-enough, since what is wanted is a repeatable and recoverable number rather
-than metrology.
+The measurement volume does not have to match the listening volume. The fit
+normalises level and the response is what is wanted, so measuring quieter is
+fine provided the system is linear there, which the check below establishes.
+Measuring *above* the linear region is the failure that matters, because a
+compressed response is a wrong response.
+
+A phone SPL app is accurate enough for recording the number, since what is
+wanted is something repeatable and recoverable rather than metrology.
 
 ## Verify the level is in the linear region
 
