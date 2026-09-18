@@ -1,5 +1,26 @@
 # Session 5, Part 1b — the four-band confirmation (2026-09-17)
 
+> **Summary, updated 2026-09-18.** The band model survives a completely
+> different microphone. Final figures, with band 1 taken from the volume-30
+> recording because the volume-50 one was compressed:
+>
+> | band | centre SoloCast | iMM-6 | Q SoloCast | iMM-6 | peak SoloCast | iMM-6 |
+> |---|---|---|---|---|---|---|
+> | 1 | 36 Hz | 40 Hz | 1.97 | 2.26 | +7.72 | **+7.72** |
+> | 5 | 251 Hz | 249 Hz | 2.15 | 2.19 | +8.10 | +8.06 |
+> | 9 | 2558 Hz | 2491 Hz | 2.27 | 2.24 | +8.05 | +7.93 |
+> | 13 | 15.3 kHz | 15.2 kHz | 1.09 | 1.08 | +8.28 | +7.43 |
+>
+> Basis agreement is 0.41-0.53 dB rms across the region each band actually
+> acts on. Band 1's whole-band figure is 1.00 dB, but that is far-field
+> residue of 1.41 dB between 300 Hz and 1.5 kHz, where band 1 is nominally
+> zero, from a single un-interleaved baseline pair. Over its own 20-120 Hz
+> it agrees to 0.53 dB and its peak matches to the hundredth.
+>
+> Plot: `results/session5/band_confirmation.png`. Numbers:
+> `results/session5/band_confirmation.json`. `results/session3/eq_model.json`
+> stands unchanged. Next is `docs/session6_plan.md`.
+
 Seven files in `Recordings/Session_5_cal_mic/`, recorded with the Dayton
 iMM-6 through an Apple USB-C dongle into the phone. Calibration file
 `Calibration/99-64551.txt`. Model written to
@@ -85,7 +106,11 @@ departure from the plan.
 
 ## Still outstanding
 
-Everything except 1b. Part 1's diagnostics, the linearity pair, the static
+Superseded: see `docs/session6_plan.md`. The volume question below was
+settled by recording band 1 at volume 30 (`docs/level.md`), the SoloCast
+comparison was dropped, and what remains is the calibrated baseline.
+
+Original text: everything except 1b. Part 1's diagnostics, the linearity pair, the static
 pink take and the same-spot SoloCast sweep, and Part 2's moving-microphone
 baseline. The baseline is what the fit actually needs; this run only
 confirmed that the model feeding it is sound.

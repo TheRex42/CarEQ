@@ -1,0 +1,42 @@
+[
+ {
+  "band": 1,
+  "fc_old": 36,
+  "fc_new": 40,
+  "q_old": 1.97,
+  "q_new": 2.26,
+  "peak_old": 7.72,
+  "peak_new": 7.72,
+  "rms_diff_db": 1.0
+ },
+ {
+  "band": 5,
+  "fc_old": 251,
+  "fc_new": 249,
+  "q_old": 2.15,
+  "q_new": 2.19,
+  "peak_old": 8.1,
+  "peak_new": 8.06,
+  "rms_diff_db": 0.43
+ },
+ {
+  "band": 9,
+  "fc_old": 2558,
+  "fc_new": 2491,
+  "q_old": 2.27,
+  "q_new": 2.24,
+  "peak_old": 8.05,
+  "peak_new": 7.93,
+  "rms_diff_db": 0.41
+ },
+ {
+  "band": 13,
+  "fc_old": 15306,
+  "fc_new": 15244,
+  "q_old": 1.09,
+  "q_new": 1.08,
+  "peak_old": 8.28,
+  "peak_new": 7.43,
+  "rms_diff_db": 0.52
+ }
+]
