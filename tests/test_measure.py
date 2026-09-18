@@ -141,6 +141,28 @@ def test_pink_noise_rta_recovers_a_known_filter():
     assert np.sqrt(np.mean(err2[m] ** 2)) < 0.6, np.sqrt(np.mean(err2[m] ** 2))
 
 
+def test_pink_noise_rta_ignores_bins_the_stimulus_does_not_excite():
+    """The bundled pink noise stops at 20 kHz (and below 20 Hz) but a recorder's
+    noise floor does not. Dividing noise by nothing gave +40 dB there, and the
+    1/3-octave windows above ~17.8 kHz averaged it in as a +60 dB shelf, which
+    the fit then chased with band 13 (found on the first real-car pink take,
+    session 6)."""
+    import numpy as np
+    from careq.signals import pink_noise
+    from careq.measure import measure_noise_signal, LOG_GRID
+
+    fs = 48000
+    rng = np.random.default_rng(1)
+    stim = pink_noise(20.0, fs, level_dbfs=-20.0, seed=3)      # 20 Hz-20 kHz
+    rec = np.concatenate([np.zeros(fs), stim, np.zeros(fs)])
+    rec = rec + rng.standard_normal(len(rec)) * 10 ** (-60 / 20)  # white floor to 24 kHz
+
+    got = measure_noise_signal(rec, fs, stim).response(3.0)
+    ref = got.db[(LOG_GRID > 1000) & (LOG_GRID < 2000)].mean()
+    edge = (LOG_GRID >= 17000) | (LOG_GRID <= 25)
+    assert np.max(np.abs(got.db[edge] - ref)) < 1.5, np.max(np.abs(got.db[edge] - ref))
+
+
 def test_two_level_comparison_detects_woofer_compression():
     """The level-linearity check must catch a woofer running out of excursion,
     and must not cry wolf on a linear one. This is the failure that made two

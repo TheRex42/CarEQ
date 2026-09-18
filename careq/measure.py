@@ -550,6 +550,12 @@ def measure_noise_signal(rec: np.ndarray, fs: int, stim: np.ndarray | None = Non
     if stim is not None:
         fs_, ps = welch_psd(stim, fs, nperseg)
         ps = np.interp(f, fs_, ps)
+        # Only bins the stimulus actually excites. The bundled pink noise is
+        # band-limited to 20 Hz-20 kHz; outside that the ratio is recorder
+        # noise over nothing (+40 dB and more), and the 1/3-octave windows
+        # centred at 17.8 kHz and above, and at 20 Hz, would average it in.
+        keep = ps > ps.max() * 1e-8
+        f, p, pn, ps = f[keep], p[keep], pn[keep], ps[keep]
     else:                                        # ideal pink, 1/f power
         ps = np.where(f > 0, 1.0 / np.maximum(f, 1e-9), 1.0)
     ratio = p / (ps + EPS)
