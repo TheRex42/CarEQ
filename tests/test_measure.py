@@ -139,3 +139,37 @@ def test_pink_noise_rta_recovers_a_known_filter():
     got2 = measure_noise_signal(moved, fs, stim).response(3.0)
     err2 = (got2.db - got2.db[m].mean()) - (truth - truth[m].mean())
     assert np.sqrt(np.mean(err2[m] ** 2)) < 0.6, np.sqrt(np.mean(err2[m] ** 2))
+
+
+def test_two_level_comparison_detects_woofer_compression():
+    """The level-linearity check must catch a woofer running out of excursion,
+    and must not cry wolf on a linear one. This is the failure that made two
+    real sessions unusable, so the diagnostic itself is worth a test."""
+    import numpy as np
+    from careq.signals import SweepSpec
+    from careq.simulate import Scenario
+    from careq.measure import measure_signal, LOG_GRID
+
+    spec = SweepSpec(duration=4.0, pre_silence=0.5, post_silence=1.5, repeats=2)
+
+    def shape(sc, playback_db):
+        r = measure_signal(sc.record(np.zeros(13), snr_db=None, seed=1,
+                                     playback_db=playback_db), spec).response(3.0)
+        return r.normalized().db
+
+    bass = (LOG_GRID >= 30) & (LOG_GRID <= 45)
+    mid = (LOG_GRID >= 100) & (LOG_GRID <= 8000)
+
+    linear = Scenario.default(spec, seed=0)
+    d = shape(linear, 16.0) - shape(linear, 0.0)
+    assert np.max(np.abs(d[bass])) < 0.1, "a linear car must look identical at both levels"
+    assert np.max(np.abs(d[mid])) < 0.1
+
+    limited = Scenario.default(spec, seed=0)
+    limited.woofer_drive = 4.0
+    d = shape(limited, 16.0) - shape(limited, 0.0)
+    # output is LOST at the bottom, and only at the bottom
+    assert d[bass].min() < -1.0, f"compression not detected: {d[bass].min():.2f} dB"
+    assert np.max(np.abs(d[mid])) < 0.3, "the midrange must be untouched"
+    # and at the reference level alone the two cars are nearly the same
+    assert np.max(np.abs(shape(limited, 0.0) - shape(linear, 0.0))) < 0.6

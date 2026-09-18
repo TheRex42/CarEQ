@@ -177,6 +177,40 @@ def mic_sos(fs: int = 48000) -> np.ndarray:
 
 
 # --------------------------------------------------------------------------- #
+# Woofer excursion limit
+# --------------------------------------------------------------------------- #
+def woofer_saturation(x: np.ndarray, fs: int, drive: float, f_split: float = 30.0) -> np.ndarray:
+    """Level-dependent compression and distortion in the bottom octaves.
+
+    A door woofer runs out of excursion long before anything else does, so as
+    the volume rises it delivers progressively less output below ~50 Hz and
+    generates harmonics there, while the midrange is untouched. Measured on
+    the car on 2026-09-17: band 1 at +9 delivered 1.9 dB less at 35-40 Hz at
+    Mazda volume 50 than at volume 30, tapering to 0.24 dB by 63 Hz and
+    nothing at all by 80 Hz, with distortion at 40 Hz rising from 1.8 % to
+    7.5 % (`docs/level.md`).
+
+    The limit is on *excursion*, not on pressure, and for a given sound
+    pressure cone displacement rises as 1/f squared. So the saturation is
+    applied to a displacement proxy, the signal through a second-order
+    low-pass at ``f_split`` which falls 12 dB per octave above it, and the
+    compression it produces is then returned to the pressure domain. That
+    puts the loss at the bottom of the range rather than at the cabin-gain
+    peak, which is what the car does.
+
+    ``drive`` 0 is linear; the compression grows with the product of
+    ``drive`` and the displacement amplitude, so raising the playback level
+    engages it exactly as turning the volume up does.
+    """
+    if drive <= 0:
+        return x
+    sos = signal.butter(2, f_split, "lowpass", fs=fs, output="sos")
+    disp = signal.sosfilt(sos, x)                      # displacement proxy
+    loss = disp - np.tanh(disp * drive) / drive        # what the excursion limit removes
+    return x - signal.sosfilt(signal.butter(2, f_split, "highpass", fs=fs, output="sos"), loss)
+
+
+# --------------------------------------------------------------------------- #
 # Recorder imperfections
 # --------------------------------------------------------------------------- #
 def lanczos_resample(x: np.ndarray, ratio: float, a: int = 8, chunk: int = 65536) -> np.ndarray:
@@ -207,6 +241,7 @@ class Scenario:
     mic: np.ndarray
     fs: int = 48000
     gain: float = 0.6   # recorder gain; the baseline sweep then peaks around -6 dBFS
+    woofer_drive: float = 0.0   # 0 = linear bass; see woofer_saturation
 
     @classmethod
     def default(cls, spec: SweepSpec | None = None, seed: int = 0) -> "Scenario":
@@ -234,21 +269,35 @@ class Scenario:
         p = 10 ** (self.true_response_db(steps, fl) / 10)
         return 10 * np.log10(frac_octave_average(fl, p, frac, freq))
 
-    def _render(self, steps, nonlinearity: float = 0.0) -> np.ndarray:
-        """Stimulus through EQ, amp nonlinearity, cabin and mic at recorder gain (no clipping)."""
+    def _render(self, steps, nonlinearity: float = 0.0, playback_db: float = 0.0) -> np.ndarray:
+        """Stimulus through EQ, amp nonlinearity, woofer, cabin and mic.
+
+        ``playback_db`` raises the level presented to the woofer, i.e. turns
+        the volume up. The recorder gain is divided back out so the recorded
+        level is unchanged and only the nonlinearity differs, which is what a
+        level-linearity comparison wants."""
         x, _ = stimulus(self.spec)
         y = self.eq.apply(x, steps)
         if nonlinearity:
             y = y - nonlinearity * y ** 3
+        k = 10 ** (playback_db / 20)
+        if k != 1.0:
+            y = y * k
+        y = woofer_saturation(y, self.fs, self.woofer_drive)
         y = signal.fftconvolve(y, self.cabin)[: len(x) + len(self.cabin)]
         y = signal.sosfilt(self.mic, y)
-        return y * self.gain
+        return y * self.gain / k
 
     def record(self, steps, onset_s: float = 0.7, drift_ppm: float = 0.0, snr_db: float | None = 40.0,
-               nonlinearity: float = 0.0, tail_s: float = 1.0, seed: int = 1) -> np.ndarray:
-        """Produce a fake phone recording of the stimulus played with ``steps`` set."""
+               nonlinearity: float = 0.0, tail_s: float = 1.0, seed: int = 1,
+               playback_db: float = 0.0) -> np.ndarray:
+        """Produce a fake recording of the stimulus played with ``steps`` set.
+
+        ``playback_db`` turns the volume up into the woofer's excursion limit
+        without changing the recorded level; use it to exercise the
+        level-linearity check."""
         rng = np.random.default_rng(seed)
-        y = self._render(steps, nonlinearity)
+        y = self._render(steps, nonlinearity, playback_db)
         if drift_ppm:
             y = lanczos_resample(y, 1.0 + drift_ppm * 1e-6)
         y = np.concatenate([np.zeros(int(onset_s * self.fs)), y, np.zeros(int(tail_s * self.fs))])

@@ -16,7 +16,7 @@ quirks, microphone calibration and user technique do not.
 
 - Python env: `.venv/` (numpy, scipy, soundfile, matplotlib, pytest). Use
   `.venv/bin/python` and `.venv/bin/careq`; system python has none of it.
-- Tests: `.venv/bin/python -m pytest` (32 tests, ~1 min). Keep them green.
+- Tests: `.venv/bin/python -m pytest` (33 tests, ~1 min). Keep them green.
 - Recordings from the car go in `recordings/<session>/` with a
   `manifest.json` (format in `docs/procedure.md`). `*.wav`, `*.npz` and
   `recordings/` are gitignored; results (json/csv/png) may be committed.
@@ -61,6 +61,14 @@ Key design facts (do not re-derive):
   bands can physically reach, not an absolute % reduction.
 - Band labels 40, 63, 100, 160, 250, 500, 1k, 1.6k, 2.5k, 4k, 6.3k, 10k,
   16k Hz are MEASURED centres (sessions 1-2). Labels only; shapes measured.
+- The car COMPRESSES above ~volume 40: +9 on band 1 delivers 1.9 dB less at
+  35-40 Hz at volume 50 than at 30, tapering to nothing by 80 Hz, with THD at
+  40 Hz going 1.8 % -> 7.5 %. Woofer excursion, not the chain. `simulate.py`'s
+  `woofer_saturation` models it and a test asserts the two-level
+  `careq measure --compare` check catches it (`docs/level.md`).
+- The band model is mic-INDEPENDENT, now measured not just argued: bands 5, 9,
+  13 re-identified through a different capsule, converter and polar pattern
+  agree to 0.41-0.52 dB rms (`docs/session5_results.md`).
 - Real-car facts (docs/session3_results.md): Q ~2, 0.85-1.0 dB/step, cuts
   mirror boosts at 93 %, level wanders ~1 dB between files during a session
   (interleave baselines; identify subtracts each run's far-field offset),

@@ -6978,6 +6978,9 @@
    "9": "mean of session2 and session3",
    "10": "mean of session2 and session3"
   },
-  "note": "bases use a baseline interpolated in time between the neighbouring baselines of the same session; see docs/session3_results.md"
+  "note": "bases use a baseline interpolated in time between the neighbouring baselines of the same session; see docs/session3_results.md",
+  "valid_at_volume": "Mazda 25-30 (linear). NOT valid at volume 50: bands 1-2 compress, see docs/level.md",
+  "confirmed_2026_09_17": "bands 1, 5, 9, 13 re-measured with a Dayton iMM-6 through an Apple USB-C dongle, a different capsule, converter and polar pattern. Centres within 5%, Q within 0.1, basis curves within 0.41-0.52 dB rms (bands 5, 9, 13) over 40 Hz-16 kHz. Band 1 was recorded at volume 50 and read 1.9 dB low at its peak because the woofer was compressing; repeated at volume 30 it matches to 0.3 dB. First empirical confirmation that the microphone cancels out of a basis.",
+  "compression_warning": "above ~volume 40 the door woofers run out of excursion: +9 on band 1 delivers 1.9 dB less at 35-40 Hz at volume 50 than at volume 30, tapering to nothing by 80 Hz. Measure at volume 30."
  }
 }
