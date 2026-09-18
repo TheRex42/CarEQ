@@ -1,14 +1,18 @@
-"""Final three profiles, with the by-ear treble calibration folded in.
+"""Final three profiles, fitted to the calibrated session 6 baseline.
 
-The owner tuned bands 11-13 by ear to -4 -4 -2 where the uncorrected fit gave
--2 -2 -1, which places the SoloCast about 1.5 dB low above 6 kHz (see
-docs/targets.md). That is applied as a microphone correction to the baseline
-and all three targets are refitted, so each gets the treble it deserves rather
-than having one target's by-ear answer pasted onto the others.
+Baseline: three moving-microphone pink takes from the occupied driver's seat,
+Dayton iMM-6 with its calibration file, Mazda volume 30, ALC off
+(results/session6/baseline_move_pooled.csv, already calibrated; see
+docs/session6_results.md).
 
-Band 1 is then set to +6 by hand: the fit caps boosts at +4 for headroom, and
-+6 was chosen by listening, clean on everything except the deepest sub-bass
-(docs/distortion.md).
+No overrides. Earlier versions set band 1 to +6 and Neutral's bands 11-13 to
+-4 -4 -2 by ear, and applied a +1.5 dB microphone correction inferred from
+that. The calibrated microphone showed the old SoloCast read 4-6 dB hot above
+6 kHz, so those by-ear cuts compensated in the wrong direction; the owner
+dropped them on 2026-09-18. Every value below is what the fit returns.
+
+Boosts are capped at +4 (costs 0.08-0.14 dB against uncapped, and keeps band 1
+off +8/+9 at 40 Hz, the most distorted region of the doors).
 
     .venv/bin/python results/final/make_profiles.py
 """
@@ -17,36 +21,23 @@ sys.path.insert(0, '.')
 import matplotlib; matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib import ticker
-sys.path.insert(0, '.')
 from careq.measure import Response, LOG_GRID as G
 from careq.identify import EqModel
 from careq.fit import fit_eq, load_target, default_weights, weighted_rms, effective_steps, plot_fit
 
-MIC_CORRECTION_DB = 1.5      # SoloCast reads this much low above 6 kHz, from the by-ear result
-BAND1 = 6                    # chosen by listening, not by the fit
-# Bands 11-13 of the neutral profile were settled by ear on female vocals,
-# listening for sibilance and cymbals. That is a direct result and stands as
-# measured; the correction above is only the inference drawn FROM it, used to
-# carry the finding across to the two profiles that have not been listened to.
-BY_EAR = {'mazda_neutral': {10: -4, 11: -4, 12: -2}}
+MAX_BOOST = 4
 LABELS = [40, 63, 100, 160, 250, 500, 1000, 1600, 2500, 4000, 6300, 10000, 16000]
 TARGETS = {'mazda_neutral': ('A  Neutral', 'flat mids, +3 dB bass shelf, gentle treble tilt', '#2a78d6'),
            'mazda_warm':    ('B  Warm', '+5 dB bass to 100 Hz, treble down 5 dB by 20 kHz', '#eb6834'),
            'mazda_bass':    ('C  Bass-forward', '+7 dB below 60 Hz, flat mids and treble', '#1baf7a')}
 
 model = EqModel.load('results/session3/eq_model.json'); A = model.per_step_matrix()
-raw = Response.from_csv('results/session4/baseline_pooled_18.csv')
-L = np.log2(G)
-corr = MIC_CORRECTION_DB * np.clip((L - np.log2(3000)) / (np.log2(7000) - np.log2(3000)), 0, 1)
-base = Response(G, raw.db + corr, "baseline (mic-corrected)")
+base = Response.from_csv('results/session6/baseline_move_pooled.csv', "baseline (calibrated)")
 w = default_weights(G)
 
 
 def finish(steps, target):
-    s = np.array(steps, dtype=int).copy(); s[0] = BAND1
-    for i, v in BY_EAR.get(target, {}).items():
-        s[i] = v
-    return s
+    return np.array(steps, dtype=int).copy()
 
 
 def predicted(steps):
@@ -62,15 +53,14 @@ def werr(db, tgt, weights=w):
 R = {}
 for t, (name, blurb, col) in TARGETS.items():
     tgt = load_target(t)
-    fit = fit_eq(base, model, tgt, max_boost=4)
+    fit = fit_eq(base, model, tgt, max_boost=MAX_BOOST)
     steps = finish(fit.steps_int, t)
     R[t] = dict(name=name, blurb=blurb, col=col, steps=steps, tgt=tgt,
                 pred=predicted(steps), err=werr(predicted(steps), tgt),
                 err0=werr(base.normalized().db, tgt))
     plot_fit(fit, f'results/final/profile_{t.split("_")[1]}.png', f'{name}: {blurb}')
 
-print(f"microphone correction applied: +{MIC_CORRECTION_DB} dB above 6 kHz")
-print(f"band 1 set to +{BAND1} by listening\n")
+print(f"baseline: calibrated session 6, boosts capped at +{MAX_BOOST}, no overrides\n")
 print(f"{'profile':18} {'settings, bands 1-13':46} {'error':>7}")
 for t, r in R.items():
     print(f"{r['name']:18} {' '.join(f'{v:+d}' for v in r['steps']):46} {r['err']:6.2f} dB")
@@ -100,7 +90,7 @@ ax = fig.add_subplot(gs[0, 1])
 ax.semilogx(G, base.normalized().db, color='#8a8985', lw=1.4, label="measured, EQ flat")
 for t, r in R.items(): ax.semilogx(G, r['pred'], color=r['col'], lw=1.8, label=r['name'])
 ax.set_ylim(-30, 18); ax.legend(frameon=False, fontsize=9)
-axes(ax, "Predicted response at the driver's seat")
+axes(ax, "Predicted response at the driver's seat (Neutral measured: 1.81 dB)")
 ax = fig.add_subplot(gs[1, :])
 for t, r in R.items():
     res = r['pred'] - r['tgt'].normalized().db; res -= np.sum(w * res) / np.sum(w)
@@ -118,8 +108,7 @@ for i, (t, r) in enumerate(R.items()):
 ax.set_xticks(x); ax.set_xticklabels([f"{i+1}\n{l:g} Hz" for i, l in enumerate(LABELS)], fontsize=8.5)
 ax.set_ylim(-12.5, 8.5); ax.axhline(0, color='k', lw=0.6)
 ax.grid(True, axis='y', color='#e6e5e1', lw=0.6); ax.legend(frameon=False, fontsize=9, ncol=3, loc='lower center')
-ax.set_title("Head-unit settings.  Band 1 = +6 and Neutral's bands 11-13 settled by ear; "
-             "Warm and Bass use the +1.5 dB mic correction inferred from that.",
+ax.set_title("Head-unit settings, as fitted (calibrated baseline, boosts capped at +4, no by-ear overrides)",
              loc='left', fontsize=11)
 ax.set_ylabel("steps"); ax.set_xlabel("band / label")
 for s in ("top", "right"): ax.spines[s].set_visible(False)

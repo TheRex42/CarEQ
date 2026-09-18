@@ -1,61 +1,61 @@
 # Final EQ profiles — 2021 Mazda 3, non-Bose
 
-Generated 2026-09-14 by `make_profiles.py`. Set with **ALC off**, Bass and
-Treble unavailable (Customize EQ replaces them), at the session 3 volume
-reference.
+Generated 2026-09-18 by `make_profiles.py` from the calibrated session 6
+baseline (`docs/session6_results.md`). Set with **ALC off**; Bass and Treble
+are unavailable (Customize EQ replaces them). Measured at Mazda volume 30.
 
 | band | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | label | 40 | 63 | 100 | 160 | 250 | 500 | 1k | 1.6k | 2.5k | 4k | 6.3k | 10k | 16k |
-| **A Neutral** | +6 | -9 | -9 | +3 | 0 | +4 | +3 | -7 | +1 | +3 | -4 | -4 | -2 |
-| **B Warm** | +6 | -9 | -9 | +4 | -3 | +2 | +2 | -9 | -2 | +2 | -6 | -6 | -7 |
-| **C Bass-forward** | +6 | -9 | -9 | +2 | -4 | +1 | 0 | -9 | -2 | +2 | -6 | -4 | -5 |
+| **A Neutral** | +4 | -9 | -9 | +1 | -2 | +4 | -2 | -7 | 0 | +4 | -2 | +3 | +4 |
+| **B Warm** | +4 | -9 | -9 | +2 | -4 | +4 | -4 | -8 | -3 | +3 | -5 | 0 | +1 |
+| **C Bass-forward** | +4 | -8 | -9 | +1 | -5 | +4 | -5 | -8 | -2 | +3 | -3 | +1 | +4 |
 
-Predicted weighted error against each profile's own target: 2.51, 2.49,
-2.60 dB, from about 4.2-4.5 dB with the EQ flat.
+| weighted error vs own target | EQ flat | predicted | measured |
+|---|---|---|---|
+| Neutral | 4.30 dB | 1.93 dB | **1.81 dB** |
+| Warm | 3.67 dB | 1.86 dB | not yet |
+| Bass-forward | 3.99 dB | 1.94 dB | not yet |
 
-## What is fitted and what is not
+Neutral was verified in the car the same evening with two moving-microphone
+takes. A second fit pass from the measured result would gain 0.16 dB, inside
+the method's ~1 dB resolution, so these are final.
 
-Two values in every profile were **not** chosen by the optimiser:
+## How they were made
 
-- **Band 1 at +6.** The fit caps boosts at +4 for headroom. +6 was chosen by
-  listening and was clean on everything except the deepest sub-bass in one
-  track. 40-50 Hz is the most distorted part of this system at about 2 %
-  before any boost (`docs/distortion.md`), so do not go higher.
-- **Neutral's bands 11-13 at -4 -4 -2.** Settled by ear on female vocals,
-  listening for sibilance and for cymbals reading as struck metal rather
-  than hiss. That is a direct result and stands as measured.
+- **Baseline:** three moving-microphone pink-noise takes from the occupied
+  driver's seat, Dayton iMM-6 with its calibration file, pooled
+  (`results/session6/baseline_move_pooled.csv`). Dropping any one take
+  moves it by at most 0.24 dB rms.
+- **Model:** `results/session3/eq_model.json`, gain scale 0.95, cut factor
+  0.93, equal weight per octave from 60 Hz to 12 kHz.
+- **Boosts capped at +4.** Uncapped fits are 0.08-0.14 dB better and put
+  band 1 at +8/+9, where the doors already distort most (`docs/distortion.md`).
+- **No by-ear overrides.** Earlier profiles set band 1 to +6 and Neutral's
+  treble to -4 -4 -2 by ear. The calibrated microphone showed the old
+  SoloCast read 4-6 dB hot above 6 kHz, in two independent comparisons, so
+  those treble cuts compensated in the wrong direction. Every value here
+  is what the fit returns.
 
-Warm and Bass-forward have not been listened to at the top. Their treble
-comes from refitting with a +1.5 dB correction above 6 kHz, which is the
-microphone error *inferred from* the neutral by-ear result
-(`docs/targets.md`).
+## Caveats
+
+- Bands 2 and 3 are at the rail. The +11 dB cabin hump at 80 Hz exceeds
+  every target; there is no Bass tone control to help.
+- Below 45 Hz nothing here can help: the doors fall away and the error
+  there is physics. That is the subwoofer item on the roadmap.
+- The model's bass cuts land ~1.5 dB deeper than predicted (sessions 4 and
+  6 both), and 1.2-3 kHz moves 2-3 dB with position and the body in the seat.
+- The three share band 1 and bands 2, 3, 6 and 8 within a step. They
+  differ in the lower mids (bands 5 and 7, which set how full the bass
+  sounds against the voice), band 9, and the treble tilt. Pick by taste.
 
 ## Files
 
 | file | contents |
 |---|---|
-| `profiles.png` | the summary sheet: targets, predicted response, residuals, settings |
-| `profile_neutral.png`, `profile_warm.png`, `profile_bass.png` | one sheet per profile |
+| `profiles.png` | summary sheet: targets, predicted response, residuals, settings |
+| `profile_neutral.png`, `profile_warm.png`, `profile_bass.png` | one fit sheet per profile |
 | `settings.json`, `settings.csv` | the same numbers, machine readable |
 | `make_profiles.py` | regenerates all of the above |
 
-## Caveats worth keeping in view
-
-- The microphone is a cardioid HyperX SoloCast with no calibration. Above
-  4 kHz the measurement is the weakest part of this, which is why the
-  neutral profile's treble was set by ear instead.
-- Bands 2 and 3 are at the rail in all three. The cabin's +14 dB hump at
-  83 Hz exceeds every target and cannot be fully corrected; there is no
-  Bass tone control to help.
-- Below 50 Hz nothing here can help. The doors are 10 dB down by 48 Hz and
-  that is physics, not tuning.
-- The three differ mostly in bass amount and treble tilt. They agree within
-  half a decibel from 250 Hz to 2 kHz, so pick by taste, not by the number.
-
-## Next
-
-A calibrated omnidirectional measurement microphone is the one outstanding
-item that would change any of this. When it arrives only the tuning
-baseline needs redoing, nine recordings and a refit; the 13-band model is a
-ratio measurement and is microphone-independent. See `docs/microphone.md`.
+The previous, pre-calibration profiles are in git history (commit 6de12e6).

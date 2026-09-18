@@ -16,7 +16,7 @@ quirks, microphone calibration and user technique do not.
 
 - Python env: `.venv/` (numpy, scipy, soundfile, matplotlib, pytest). Use
   `.venv/bin/python` and `.venv/bin/careq`; system python has none of it.
-- Tests: `.venv/bin/python -m pytest` (33 tests, ~1 min). Keep them green.
+- Tests: `.venv/bin/python -m pytest` (34 tests, ~1 min). Keep them green.
 - Recordings from the car go in `recordings/<session>/` with a
   `manifest.json` (format in `docs/procedure.md`). `*.wav`, `*.npz` and
   `recordings/` are gitignored; results (json/csv/png) may be committed.
@@ -86,8 +86,10 @@ Key design facts (do not re-derive):
   gain limiter matching the ALC-off pair result.
 - Mic, from session 5 on: Dayton iMM-6 (serial 99-64551) through an Apple
   USB-C dongle into the phone. Calibration `Calibration/99-64551.txt`, sign
-  checked; ALWAYS pass `--mic-cal Calibration/99-64551.txt` to `rta`, `measure`
-  and `fit` for a baseline. Identification needs no mic cal (ratio). The
+  checked; ALWAYS pass `--mic-cal Calibration/99-64551.txt` to `rta` and
+  `measure` for a baseline, and to `fit` ONLY when fitting a WAV directly:
+  `fit --mic-cal` also applies to a CSV, and rta/measure CSVs are already
+  calibrated (double subtraction). Identification needs no mic cal (ratio). The
   SoloCast used for sessions 1-4 is retired; its baselines are superseded.
 - Default target `harman_car` = HouseCurve "Car B" (JBL-derived), a
   placeholder. The owner prefers flat mids + slight bass shelf; any
@@ -114,8 +116,8 @@ Key design facts (do not re-derive):
    replaces them). Let the recorder run 3 s past the end. `load_wav` takes
    channel 0 and resamples 44.1k -> 48k.
 6. Docs: `docs/method.md` (what every stage does + how the target was
-   reached), `docs/session{2,3,4,5}_results.md`, `docs/session6_plan.md`
-   (next), `docs/level.md` (volume, compression), `docs/microphone.md`,
+   reached), `docs/session{2,3,4,5}_results.md`, `docs/session6_results.md`
+   (latest), `docs/level.md` (volume, compression), `docs/microphone.md`,
    `docs/distortion.md`, `docs/targets.md`, `docs/rta.md`,
    `docs/weighting.md`, `docs/parametric.md`, `docs/listening.md`. Older plan
    files and `session2_results` / `session5_results` carry OVERTURNED banners
@@ -128,14 +130,21 @@ Key design facts (do not re-derive):
 three sessions. Multi-position tuning baseline, fit, and a measured
 verification in the car: predicted 2.64 dB weighted error, measured 2.73,
 from 4.54 flat, with pass-1 settings `+4 -9 -9 +3 0 +4 +3 -6 +1 +4 -1 -1 0`.
-Three voicings bundled and listened to; final profiles in `results/final/`,
-Neutral currently `+6 -9 -9 +3 0 +4 +3 -7 +1 +3 -4 -4 -2` (band 1 and bands
-11-13 set by ear). Harmonic distortion measured. Written up in
+Three voicings bundled and listened to (band 1 and Neutral's bands 11-13
+were then set by ear; those overrides were dropped 2026-09-18). Harmonic
+distortion measured. Written up in
 `docs/method.md`.
 
 **Done (2026-09-17).** iMM-6 in hand and checked. Band model re-confirmed
-through it. Measurement volume settled at 30 (50 compresses). What remains
-is the calibrated baseline: `docs/session6_plan.md`.
+through it. Measurement volume settled at 30 (50 compresses).
+
+**Done (2026-09-18), session 6.** Pink agrees with sweep in the car (0.31 dB
+rms). Calibrated moving-mic baseline, all three voicings refitted with NO
+by-ear overrides (the old mic read 4-6 dB hot above 6 kHz, so the by-ear
+treble cuts were wrong-way), boosts capped at +4. Neutral
+`+4 -9 -9 +1 -2 +4 -2 -7 0 +4 -2 +3 +4` verified: predicted 1.93, measured
+1.81 dB from 4.30 flat; pass 2 would gain 0.16 dB, so stopped. Final profiles
+in `results/final/`, write-up `docs/session6_results.md`.
 
 **Scope, reconsidered.** The signal processing was never the hard part; it
 worked on the first real recording and never gave a wrong answer. All three
@@ -155,11 +164,8 @@ responses) to catch ALC-class settings, which fail silently.
 
 ### Next, in rough order
 
-1. **Calibrated baseline: `docs/session6_plan.md`.** Five files at volume
-   30: pink against sweep at a fixed spot (first real-car test of the pink
-   path), then three moving-mic pink takes. Refit all three voicings; test
-   whether Neutral's treble lands at the by-ear -4 -4 -2 unaided. Optional
-   verification pass with the new sliders set.
+1. **Verify Warm and Bass-forward** if either gets used: set it, three
+   moving pink takes, `careq rta ... --mic-cal`, `careq fit --current`.
 2. **REW cross-check.** Still the only external validation never done.
    `careq measure --save-ir ir.wav` writes the averaged impulse response
    for import; magnitudes should agree within ~1 dB at 1/3 octave.
