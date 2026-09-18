@@ -27,9 +27,21 @@ It stops being irrelevant at both ends:
 
 ## The recommendation
 
-**Use Mazda volume 25**, the value every session from 1 to 4 used and the
-one behind a result validated end to end. For the record, note what the pink
-file reads there; expect somewhere around 65 dB C-slow.
+**Provisionally Mazda volume 25**, the value every session from 1 to 4 used
+and the one behind a result validated end to end.
+
+Measured 2026-09-17: volume 25 reads **55 dB** C-slow on the pink file and
+volume 50 reads **75 dB**, so this head unit gives about 0.8 dB per step
+through that range.
+
+55 dB is quiet, and it costs signal-to-noise: roughly 12 dB at 20 Hz
+against 32 dB at volume 50. Since the distortion turns out to contaminate a
+measurement by at most 0.02 dB (see below), low distortion is a weak reason
+to measure quietly, and the only real one is avoiding **compression**, which
+is a different phenomenon and is directly testable. Band 1 recorded at both
+volumes settles it: identical bases across a 20 dB span means no
+compression, and the louder setting is then preferable for its
+signal-to-noise. This note will be updated once that test is in.
 
 ### An earlier version of this page got this wrong
 
@@ -70,6 +82,20 @@ compressed response is a wrong response.
 
 A phone SPL app is accurate enough for recording the number, since what is
 wanted is something repeatable and recoverable rather than metrology.
+
+## Distortion barely matters; compression does
+
+Worth separating, because they get conflated. Harmonic distortion is
+almost irrelevant to what is being measured. With sweeps it is exactly zero,
+since the harmonics land about a second before the linear impulse response
+and the pre-window discards them (Farina). Even for continuous noise, which
+cannot separate them, the measured third-octave spectrum lifts by at most
+**0.02 dB** at the 7.5 % distortion seen at volume 50.
+
+Compression is the real risk. A driver or a limiter reducing gain at high
+level changes the *fundamental* response, which is precisely what the fit
+consumes. High distortion is a hint that a driver is working hard, not proof
+that the response is compressed, and the two must be tested separately.
 
 ## Verify the level is in the linear region
 
