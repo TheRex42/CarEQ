@@ -77,6 +77,12 @@ right number for the fit, which works on the smoothed curves.
 
 ## Superposition: the assumption that fails
 
+> **OVERTURNED by session 3.** This conclusion was wrong. ALC was on and
+> adding about 6 dB, so +9 boosts ran into the head unit's limiter. With ALC
+> off, adjacent bands add to within about 5 %, and the fit's gain scale is
+> 0.95, not 0.87. See `docs/session3_results.md`. The text below records
+> what was believed at the time.
+
 **Adjacent bands 9 and 10 both at +9.** Measured peak 9.8 dB where the sum
 of the two single-band curves predicts 11.7 dB. Least squares recovers the
 combination as 0.85 x basis 9 + 0.64 x basis 10, and a two-peak fit of the

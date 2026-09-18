@@ -1,5 +1,11 @@
 # Session 5 — calibrated microphone, simplified
 
+> **SUPERSEDED by `docs/session6_plan.md`.** Kept as a record. Part 1b was
+> done (band model confirmed). The linearity question was settled a better
+> way (band 1 at volume 30 against 50). The SoloCast comparison was dropped.
+> **Part 0's "set 75 dB on the pink file" is WRONG and must not be
+> followed**: it gives volume 50, which compresses. Use Mazda volume 30.
+
 Dayton iMM-6 (TRRS) through an Apple USB-C dongle into the phone, with a
 USB-C extension on the long run. **7 files and about 13 minutes in the
 car**, or 14 files and 25 minutes with the optional four-band

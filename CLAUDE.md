@@ -84,11 +84,15 @@ Key design facts (do not re-derive):
   7.5 % at 40 Hz (`docs/level.md`). Combined model: `results/session3/eq_model.json`.
   `simulate.py`'s `HeadUnitEq.mazda_like` carries these numbers plus a soft
   gain limiter matching the ALC-off pair result.
-- Mic: HyperX SoloCast. No full-band measurement exists (docs/microphone.md);
-  no `--mic-cal` applied, so treat fit results above 4 kHz with suspicion.
+- Mic, from session 5 on: Dayton iMM-6 (serial 99-64551) through an Apple
+  USB-C dongle into the phone. Calibration `Calibration/99-64551.txt`, sign
+  checked; ALWAYS pass `--mic-cal Calibration/99-64551.txt` to `rta`, `measure`
+  and `fit` for a baseline. Identification needs no mic cal (ratio). The
+  SoloCast used for sessions 1-4 is retired; its baselines are superseded.
 - Default target `harman_car` = HouseCurve "Car B" (JBL-derived), a
   placeholder. The owner prefers flat mids + slight bass shelf; any
-  `frequency,raw` CSV works with `--target`.
+  `frequency,raw` CSV works with `--target`. The bundled `mazda_neutral`,
+  `mazda_warm`, `mazda_bass` are preferences, not derivations (`docs/targets.md`).
 
 ## Processing a new session: checklist
 
@@ -102,23 +106,36 @@ Key design facts (do not re-derive):
    in, not moved between baseline and band runs. Only 4 bands are actually
    needed (1, 5, 9, 13 plus a baseline lands within 1 step of the full
    13-band model; see docs/method.md) once a full model for the head unit
-   exists. Tuning baseline: 9 positions around the driver's headrest,
-   pooled with `careq fit --measurement p1.wav --more p2.wav ...`.
+   exists. Tuning baseline (from session 6): hand-held moving-mic PINK
+   noise from the occupied driver's seat, three takes, `careq rta move*.wav
+   --mic-cal ...`. Sessions 1-4 used 9 clamped sweep positions instead; that
+   works but needs the mic still, which the iMM-6 makes awkward.
 5. ALC OFF, fixed volume number, Bass/Treble unavailable (Customize EQ
    replaces them). Let the recorder run 3 s past the end. `load_wav` takes
    channel 0 and resamples 44.1k -> 48k.
 6. Docs: `docs/method.md` (what every stage does + how the target was
-   reached), `docs/session{2,3,4}_results.md`, `docs/microphone.md`,
-   `docs/distortion.md`. Committable results live in `results/<session>/`.
+   reached), `docs/session{2,3,4,5}_results.md`, `docs/session6_plan.md`
+   (next), `docs/level.md` (volume, compression), `docs/microphone.md`,
+   `docs/distortion.md`, `docs/targets.md`, `docs/rta.md`,
+   `docs/weighting.md`, `docs/parametric.md`, `docs/listening.md`. Older plan
+   files and `session2_results` / `session5_results` carry OVERTURNED banners
+   where they were wrong; read the banner. Committable results live in
+   `results/<session>/`.
 
 ## Roadmap
 
 **Done (2026-09-13/14).** All 13 bands identified and cross-checked over
 three sessions. Multi-position tuning baseline, fit, and a measured
 verification in the car: predicted 2.64 dB weighted error, measured 2.73,
-from 4.54 flat. Settings loaded: `+4 -9 -9 +3 0 +4 +3 -6 +1 +4 -1 -1 0`.
-Three target voicings bundled. Harmonic distortion measured. Everything
-written up in `docs/method.md`.
+from 4.54 flat, with pass-1 settings `+4 -9 -9 +3 0 +4 +3 -6 +1 +4 -1 -1 0`.
+Three voicings bundled and listened to; final profiles in `results/final/`,
+Neutral currently `+6 -9 -9 +3 0 +4 +3 -7 +1 +3 -4 -4 -2` (band 1 and bands
+11-13 set by ear). Harmonic distortion measured. Written up in
+`docs/method.md`.
+
+**Done (2026-09-17).** iMM-6 in hand and checked. Band model re-confirmed
+through it. Measurement volume settled at 30 (50 compresses). What remains
+is the calibrated baseline: `docs/session6_plan.md`.
 
 **Scope, reconsidered.** The signal processing was never the hard part; it
 worked on the first real recording and never gave a wrong answer. All three
@@ -138,32 +155,21 @@ responses) to catch ALC-class settings, which fail silently.
 
 ### Next, in rough order
 
-1. **Listen.** Three voicings are loaded and being compared by ear
-   (`mazda_neutral`, `mazda_warm`, `mazda_bass`). Band 1 at +6 is worth
-   trying for deep bass, but NOT more: 40-50 Hz already measures 2 % THD
-   before any boost (`docs/distortion.md`).
+1. **Calibrated baseline: `docs/session6_plan.md`.** Five files at volume
+   30: pink against sweep at a fixed spot (first real-car test of the pink
+   path), then three moving-mic pink takes. Refit all three voicings; test
+   whether Neutral's treble lands at the by-ear -4 -4 -2 unaided. Optional
+   verification pass with the new sliders set.
 2. **REW cross-check.** Still the only external validation never done.
    `careq measure --save-ir ir.wav` writes the averaged impulse response
    for import; magnitudes should agree within ~1 dB at 1/3 octave.
-3. **Omnidirectional calibrated microphone.** Dayton iMM-6 (TRRS) ordered
-   2026-09-15, through an Apple USB-C dongle into the phone, USB-C
-   extension on the long run. `docs/session5_plan.md`: 8 files, ~15 min,
-   four diagnostics at one fixed position then a hand-held moving-mic pink
-   baseline from the occupied driver's seat, which is what
-   `docs/procedure.md` specified all along. Pattern matters more than the
-   response curve: a cardioid weights arrival directions differently from
-   an ear and no single calibration curve fixes that. The band model does
-   NOT need redoing; only the baseline does. Expected gain 0.0-0.6 dB
-   weighted, but bands 11-13 could move several steps, and the by-ear
-   result predicts the SoloCast reads ~1.5 dB low above 6 kHz
-   (`docs/targets.md`). The Dayton cal file describes the capsule only, not
-   the dongle, which is why the SoloCast same-spot sweep is in the plan.
-4. **Subwoofer** for the low bass, which no EQ can reach: 25-45 Hz is
+   `fix_sweep.wav` from session 6 is the input.
+3. **Subwoofer** for the low bass, which no EQ can reach: 25-45 Hz is
    ~11 dB under target and the doors are 10 dB down by 48 Hz. Cross at
    50-60 Hz, NOT the usual 80, which would feed the +13.8 dB hump at 83 Hz.
    Non-Bose gen4 has no preouts: tap speaker level under the passenger
    seat. Retune afterwards; set level, crossover and phase by measurement.
-5. **Door sealing** as a separate, measurable experiment. The 160 Hz dip
+4. **Door sealing** as a separate, measurable experiment. The 160 Hz dip
    is a source property (0.77 dB spread across 18 positions vs 1.73
    median), but the cause is NOT established: an unsealed door's acoustic
    short circuit and a deliberate notch in Mazda's own tuning fit the data
@@ -174,8 +180,11 @@ responses) to catch ALC-class settings, which fail silently.
 ### Known dead ends (do not retry)
 
 - Bass/Treble tone controls: disabled by Customize EQ.
-- A second fit pass: predicted gain 0.26 dB, mostly by cutting the treble
-  bands the microphone cannot vouch for.
+- A second fit pass ON THE SOLOCAST BASELINE: predicted gain 0.26 dB, mostly
+  by cutting treble the uncalibrated mic could not vouch for. With the
+  calibrated iMM-6 that objection lapses; iterating is legitimate again.
+- Measuring at volume 50, or choosing a volume from a pink SPL reading.
+- The SoloCast as a reference, or re-identifying the band model for a new mic.
 - The phone's internal mic as a reference: +13 dB hot at 10-16 kHz.
 - IR-based clock-drift estimators: biased 10-40 ppm by the cabin.
 

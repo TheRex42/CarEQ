@@ -98,6 +98,14 @@ spot in the same minute.
 
 # A problem found in these files: distortion is 2-3x higher
 
+> **The diagnosis below is WRONG.** It attributes the distortion to the
+> dongle's input gain. It was the car: these files were recorded at Mazda
+> volume 50, and band 1 recorded at volume 30 shows the distortion falling
+> from 7.5 % to 1.8 % at 40 Hz along with 1.9 dB of compression that
+> vanishes by 80 Hz. The app's gain was digital and set to 0, so there was
+> no preamp gain to reduce. See `docs/level.md`. Kept as a record of the
+> reasoning, including why the flat second harmonic misled.
+
 Checked because 75 dB on the pink file is a new reference and might be
 louder than the volume 25 used for sessions 2-4. Harmonic distortion,
 corrected for the cabin response at the harmonic frequencies:
