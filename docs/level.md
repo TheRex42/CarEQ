@@ -30,12 +30,24 @@ It stops being irrelevant at both ends:
 **Provisionally Mazda volume 25**, the value every session from 1 to 4 used
 and the one behind a result validated end to end.
 
-Measured 2026-09-17: volume 25 reads **55 dB** C-slow on the pink file and
-volume 50 reads **75 dB**, so this head unit gives about 0.8 dB per step
-through that range.
+Measured 2026-09-17: volume 25 read about 55 and volume 50 about 75 on a
+browser SPL meter, so roughly 0.8 dB per step through that range.
 
-55 dB is quiet, and it costs signal-to-noise: roughly 12 dB at 20 Hz
-against 32 dB at volume 50. Since the distortion turns out to contaminate a
+**Treat the absolute numbers as worthless.** That meter used the phone's
+built-in microphone, which carries a +13 dB resonance in the top octaves
+(`docs/microphone.md`). Pink noise puts real energy up there, so a broadband
+reading through it is inflated by several dB, and a browser meter has no
+per-model calibration to remove it. The 20 dB *span* between the two volumes
+is probably about right, since the same error applies at both, and that is
+all the span is used for here.
+
+**The volume number is the reference.** It is exactly recoverable, needs no
+instrument, and is what every session has actually used. An SPL figure was
+only ever wanted so the setting could be recovered if the head unit were
+reset, and there is no calibrated way to obtain one here. Do not chase it.
+
+Volume 25 is quiet and costs signal-to-noise: roughly 12 dB at 20 Hz against
+32 dB at volume 50. Since the distortion turns out to contaminate a
 measurement by at most 0.02 dB (see below), low distortion is a weak reason
 to measure quietly, and the only real one is avoiding **compression**, which
 is a different phenomenon and is directly testable. Band 1 recorded at both
