@@ -27,8 +27,45 @@ It stops being irrelevant at both ends:
 
 ## The recommendation
 
-**Provisionally Mazda volume 25**, the value every session from 1 to 4 used
-and the one behind a result validated end to end.
+**Mazda volume 30**, settled by measurement on 2026-09-17 (below). Volume 50
+is compressed and must not be used.
+
+## Settled: volume 50 compresses, volume 30 does not
+
+Band 1 recorded at +9 at both volumes, against the model built at volume 25:
+
+| | peak of band 1's basis | fitted Q | THD at 40 Hz |
+|---|---|---|---|
+| SoloCast model, volume 25 | +8.27 dB at 38 Hz | 1.95 | 2.2 % |
+| iMM-6, volume 30 | +7.98 dB at 38 Hz | 2.15 | 1.8 % |
+| iMM-6, volume 50 | +6.41 dB at 40 Hz | 1.98 | 7.5 % |
+
+Volume 30 reproduces the volume-25 model to within 0.3 dB. Volume 50 falls
+1.9 dB short, and the shortfall is confined to the bottom octave:
+
+| frequency | volume 30 minus volume 50 |
+|---|---|
+| 35 Hz | +2.29 dB |
+| 40 Hz | +1.44 dB |
+| 50 Hz | +0.39 dB |
+| 63 Hz | +0.24 dB |
+| 80 Hz and above | 0.0 dB |
+
+That is a woofer running out of excursion, and nothing else looks like it:
+a level-dependent loss of output confined to the frequencies where cone
+travel is greatest, vanishing entirely by 80 Hz. Distortion tells the same
+story, falling from 7.5 % to 1.8 % at 40 Hz and from 1.1-3.0 % to 0.3-0.8 %
+across the midrange.
+
+**This was the car, not the recording chain.** An earlier note here argued
+from the harmonic structure that a flat second harmonic pointed at the
+dongle. That was wrong. The distortion scales with acoustic level exactly as
+speaker distortion should.
+
+It also explains the one loose end in the four-band confirmation: band 1
+agreed with the SoloCast model less well than bands 5, 9 and 13 (0.69 dB
+against 0.41-0.52). It was measured at volume 50, where it was compressed.
+The other three sit above the compression region and were unaffected.
 
 Measured 2026-09-17: volume 25 read about 55 and volume 50 about 75 on a
 browser SPL meter, so roughly 0.8 dB per step through that range.
@@ -46,8 +83,11 @@ instrument, and is what every session has actually used. An SPL figure was
 only ever wanted so the setting could be recovered if the head unit were
 reset, and there is no calibrated way to obtain one here. Do not chase it.
 
-Volume 25 is quiet and costs signal-to-noise: roughly 12 dB at 20 Hz against
-32 dB at volume 50. Since the distortion turns out to contaminate a
+Volume 30 costs signal-to-noise at the very bottom: about 12 dB at 20 Hz
+against 32 dB at volume 50. That is acceptable. The fit weights 20 Hz at
+0.05, the lowest band sits at 38-41 Hz where there is 35-40 dB, and a
+compressed measurement is a wrong measurement no matter how quiet its noise
+floor. Since the distortion turns out to contaminate a
 measurement by at most 0.02 dB (see below), low distortion is a weak reason
 to measure quietly, and the only real one is avoiding **compression**, which
 is a different phenomenon and is directly testable. Band 1 recorded at both

@@ -65,7 +65,9 @@ Key design facts (do not re-derive):
   mirror boosts at 93 %, level wanders ~1 dB between files during a session
   (interleave baselines; identify subtracts each run's far-field offset),
   road noise is irrelevant above 31 Hz. ALC must be OFF and the volume
-  number fixed at Mazda volume 25. THE VOLUME NUMBER IS THE REFERENCE; no
+  number fixed at Mazda volume 30 (settled 2026-09-17: volume 50 compresses
+  band 1 by 1.9 dB at 35-40 Hz and trebles distortion; volume 30 reproduces
+  the volume-25 model within 0.3 dB). THE VOLUME NUMBER IS THE REFERENCE; no
   trustworthy SPL figure exists (the only meter available runs on the phone's
   built-in mic, which is +13 dB hot up top). Do NOT pick a volume from a pink
   SPL reading: pink spreads energy across the band while a sweep puts it all
