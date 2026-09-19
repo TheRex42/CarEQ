@@ -1,5 +1,12 @@
 """Final three profiles, fitted to the calibrated session 6 baseline.
 
+Targets (revised 2026-09-18 after listening; see docs/targets.md, "Research
+round 2"): the owner's by-ear preference measured through the calibrated mic
+(`mazda_by_ear`), bracketed by two research curves, Olive & Welti's in-car
+target and Olive 2013's trained-listener room curve. The earlier Neutral /
+Warm / Bass-forward set was dropped: Neutral's own target was too bright
+(treble only -2 dB at 20 kHz) and Warm's fit made a presence dip.
+
 Baseline: three moving-microphone pink takes from the occupied driver's seat,
 Dayton iMM-6 with its calibration file, Mazda volume 30, ALC off
 (results/session6/baseline_move_pooled.csv, already calibrated; see
@@ -11,8 +18,9 @@ that. The calibrated microphone showed the old SoloCast read 4-6 dB hot above
 6 kHz, so those by-ear cuts compensated in the wrong direction; the owner
 dropped them on 2026-09-18. Every value below is what the fit returns.
 
-Boosts are capped at +4 (costs 0.08-0.14 dB against uncapped, and keeps band 1
-off +8/+9 at 40 Hz, the most distorted region of the doors).
+Boosts are capped at +6, the band 1 level the owner chose by ear (0.1 dB better
+than +4; +9 would buy 0.05-0.1 dB more by driving band 1 to +9 at 40 Hz, the
+most distorted region of the doors).
 
     .venv/bin/python results/final/make_profiles.py
 """
@@ -25,15 +33,19 @@ from careq.measure import Response, LOG_GRID as G
 from careq.identify import EqModel
 from careq.fit import fit_eq, load_target, default_weights, weighted_rms, effective_steps, plot_fit
 
-MAX_BOOST = 4
+MAX_BOOST = 6
 LABELS = [40, 63, 100, 160, 250, 500, 1000, 1600, 2500, 4000, 6300, 10000, 16000]
-TARGETS = {'mazda_neutral': ('A  Neutral', 'flat mids, +3 dB bass shelf, gentle treble tilt', '#2a78d6'),
-           'mazda_warm':    ('B  Warm', '+5 dB bass to 100 Hz, treble down 5 dB by 20 kHz', '#eb6834'),
-           'mazda_bass':    ('C  Bass-forward', '+7 dB below 60 Hz, flat mids and treble', '#1baf7a')}
+TARGETS = {'mazda_by_ear':           ('A  By ear', "+4 dB bass shelf, flat mids, treble -3.25 dB/oct above 4 kHz (owner's choice)", '#2a78d6'),
+           'olive_welti_car':        ('B  Harman in-car', 'Olive & Welti in-car target: ~+8 dB bass, flat mids, -5 dB at 20 kHz', '#eb6834'),
+           'olive2013_room_trained': ('C  Trained listener', 'Olive 2013 trained listeners (home room): +3.5 dB bass, treble to -5 dB', '#1baf7a')}
 
 model = EqModel.load('results/session3/eq_model.json'); A = model.per_step_matrix()
 base = Response.from_csv('results/session6/baseline_move_pooled.csv', "baseline (calibrated)")
 w = default_weights(G)
+
+
+def slug(name):
+    return name.split('  ')[1].lower().replace(' ', '_').replace('-', '_')
 
 
 def finish(steps, target):
@@ -58,7 +70,7 @@ for t, (name, blurb, col) in TARGETS.items():
     R[t] = dict(name=name, blurb=blurb, col=col, steps=steps, tgt=tgt,
                 pred=predicted(steps), err=werr(predicted(steps), tgt),
                 err0=werr(base.normalized().db, tgt))
-    plot_fit(fit, f'results/final/profile_{t.split("_")[1]}.png', f'{name}: {blurb}')
+    plot_fit(fit, f'results/final/profile_{slug(name)}.png', f'{name}: {blurb}')
 
 print(f"baseline: calibrated session 6, boosts capped at +{MAX_BOOST}, no overrides\n")
 print(f"{'profile':18} {'settings, bands 1-13':46} {'error':>7}")
@@ -90,7 +102,7 @@ ax = fig.add_subplot(gs[0, 1])
 ax.semilogx(G, base.normalized().db, color='#8a8985', lw=1.4, label="measured, EQ flat")
 for t, r in R.items(): ax.semilogx(G, r['pred'], color=r['col'], lw=1.8, label=r['name'])
 ax.set_ylim(-30, 18); ax.legend(frameon=False, fontsize=9)
-axes(ax, "Predicted response at the driver's seat (Neutral measured: 1.81 dB)")
+axes(ax, "Predicted response at the driver's seat")
 ax = fig.add_subplot(gs[1, :])
 for t, r in R.items():
     res = r['pred'] - r['tgt'].normalized().db; res -= np.sum(w * res) / np.sum(w)
@@ -108,10 +120,10 @@ for i, (t, r) in enumerate(R.items()):
 ax.set_xticks(x); ax.set_xticklabels([f"{i+1}\n{l:g} Hz" for i, l in enumerate(LABELS)], fontsize=8.5)
 ax.set_ylim(-12.5, 8.5); ax.axhline(0, color='k', lw=0.6)
 ax.grid(True, axis='y', color='#e6e5e1', lw=0.6); ax.legend(frameon=False, fontsize=9, ncol=3, loc='lower center')
-ax.set_title("Head-unit settings, as fitted (calibrated baseline, boosts capped at +4, no by-ear overrides)",
+ax.set_title(f"Head-unit settings, as fitted (calibrated baseline, boosts capped at +{MAX_BOOST}, no overrides)",
              loc='left', fontsize=11)
 ax.set_ylabel("steps"); ax.set_xlabel("band / label")
 for s in ("top", "right"): ax.spines[s].set_visible(False)
 fig.suptitle("2021 Mazda 3 — final EQ profiles", x=0.008, ha='left', fontsize=14, weight='bold')
 fig.savefig('results/final/profiles.png', dpi=130, bbox_inches='tight')
-print("\nwrote results/final/profiles.png, profile_{neutral,warm,bass}.png, settings.json, settings.csv")
+print("\nwrote results/final/profiles.png, " + ", ".join(f"profile_{slug(r['name'])}.png" for r in R.values()) + ", settings.json, settings.csv")

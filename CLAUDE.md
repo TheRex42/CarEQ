@@ -92,9 +92,11 @@ Key design facts (do not re-derive):
   calibrated (double subtraction). Identification needs no mic cal (ratio). The
   SoloCast used for sessions 1-4 is retired; its baselines are superseded.
 - Default target `harman_car` = HouseCurve "Car B" (JBL-derived), a
-  placeholder. The owner prefers flat mids + slight bass shelf; any
-  `frequency,raw` CSV works with `--target`. The bundled `mazda_neutral`,
-  `mazda_warm`, `mazda_bass` are preferences, not derivations (`docs/targets.md`).
+  placeholder. The owner's measured by-ear preference is `mazda_by_ear` (+4 dB
+  shelf, flat mids, -3.25 dB/oct above ~4.2 kHz); use it. Research targets
+  `olive_welti_car`, `clark_car`, `binelli_farina_car`, `olive2013_room_*` are
+  digitised from Toole 2015 (~+-1 dB). `mazda_neutral/warm/bass` are
+  superseded (Neutral's treble was too flat); see `docs/targets.md`.
 
 ## Processing a new session: checklist
 
@@ -143,8 +145,18 @@ rms). Calibrated moving-mic baseline, all three voicings refitted with NO
 by-ear overrides (the old mic read 4-6 dB hot above 6 kHz, so the by-ear
 treble cuts were wrong-way), boosts capped at +4. Neutral
 `+4 -9 -9 +1 -2 +4 -2 -7 0 +4 -2 +3 +4` verified: predicted 1.93, measured
-1.81 dB from 4.30 flat; pass 2 would gain 0.16 dB, so stopped. Final profiles
-in `results/final/`, write-up `docs/session6_results.md`.
+1.81 dB from 4.30 flat; pass 2 would gain 0.16 dB, so stopped. Write-up
+`docs/session6_results.md`.
+
+**Done (2026-09-18), targets revised after listening.** Neutral was too
+bright: its own target (treble -2 dB at 20 kHz) was the fault, not the
+method. Every published target with a falling treble reproduces the owner's
+by-ear treble. Research in `docs/targets.md` ("Research round 2"; Toole JAES
+2015 Figs 14-15: Olive 2013 preferred room curves, three in-car targets).
+Final profiles in `results/final/`, boosts capped at +6: **By ear**
+(`mazda_by_ear`) `+6 -9 -9 +3 -1 +6 -2 -6 0 +5 -2 0 +1`, **Harman in-car**
+(`olive_welti_car`), **Trained listener** (`olive2013_room_trained`). All
+predicted, not yet measured.
 
 **Scope, reconsidered.** The signal processing was never the hard part; it
 worked on the first real recording and never gave a wrong answer. All three
@@ -164,8 +176,9 @@ responses) to catch ALC-class settings, which fail silently.
 
 ### Next, in rough order
 
-1. **Verify Warm and Bass-forward** if either gets used: set it, three
-   moving pink takes, `careq rta ... --mic-cal`, `careq fit --current`.
+1. **Verify By ear** in the car: set it, three moving pink takes (recorder
+   started 3 s early), `careq rta ... --mic-cal`, then
+   `careq fit --current ... --target mazda_by_ear --max-boost 6`.
 2. **REW cross-check.** Still the only external validation never done.
    `careq measure --save-ir ir.wav` writes the averaged impulse response
    for import; magnitudes should agree within ~1 dB at 1/3 octave.
@@ -175,6 +188,12 @@ responses) to catch ALC-class settings, which fail silently.
    50-60 Hz, NOT the usual 80, which would feed the +13.8 dB hump at 83 Hz.
    Non-Bose gen4 has no preouts: tap speaker level under the passenger
    seat. Retune afterwards; set level, crossover and phase by measurement.
+   The taps are POST-EQ, so bands 1-3 will drive the sub too: re-identify
+   bands 1-3 with sweeps and take a new moving-mic baseline after install.
+   Simulated (2026-09-18, ideal sub at 60 Hz): the lower-mid scoop that
+   bass-heavy targets force (bands 5, 7) disappears and error falls to
+   ~1.45 dB; ResoNix's 1.6-2.5 kHz cuts do not (its own dip + the car's
+   1.6-2 kHz bump). See `docs/targets.md`.
 4. **Door sealing** as a separate, measurable experiment. The 160 Hz dip
    is a source property (0.77 dB spread across 18 positions vs 1.73
    median), but the cause is NOT established: an unsealed door's acoustic

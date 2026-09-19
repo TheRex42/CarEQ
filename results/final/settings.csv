@@ -1,4 +1,4 @@
 profile,band1_40Hz,band2_63Hz,band3_100Hz,band4_160Hz,band5_250Hz,band6_500Hz,band7_1000Hz,band8_1600Hz,band9_2500Hz,band10_4000Hz,band11_6300Hz,band12_10000Hz,band13_16000Hz
-Neutral,4,-9,-9,1,-2,4,-2,-7,0,4,-2,3,4
-Warm,4,-9,-9,2,-4,4,-4,-8,-3,3,-5,0,1
-Bass-forward,4,-8,-9,1,-5,4,-5,-8,-2,3,-3,1,4
+By ear,6,-9,-9,3,-1,6,-2,-6,0,5,-2,0,1
+Harman in-car,6,-8,-9,0,-5,4,-5,-8,-3,3,-4,0,1
+Trained listener,6,-9,-9,2,-1,6,-2,-8,-3,3,-5,0,1
