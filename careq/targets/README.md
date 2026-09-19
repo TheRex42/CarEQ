@@ -15,11 +15,21 @@ export) can be passed to `careq fit --target FILE`.
 | `mazda_neutral` | The owner's 2021 Mazda 3 voicing A: flat mids, +3 dB bass shelf, -2 dB at 20 kHz (validated in the car 2026-09-13) |
 | `mazda_warm` | voicing B: +5 dB bass to 100 Hz, Harman-style slope to -5 dB at 20 kHz |
 | `mazda_bass` | voicing C: +7 dB below 60 Hz, flat mids and treble |
+| `mazda_by_ear` | **the owner's by-ear preference (2026-09-18)**: +4 dB shelf (half-gain ~160 Hz), flat mids, -3.25 dB/oct above ~4.2 kHz. See `docs/targets.md` |
+| `olive_welti_car`, `clark_car`, `binelli_farina_car` | the three experimentally determined in-car targets in Toole, JAES 2015, Fig. 15 (digitised, ~+-1 dB) |
+| `olive2013_room_trained/all/untrained` | Olive, Welti & McMullin 2013 preferred in-room curves by listener group, Toole 2015 Fig. 14 (digitised; home room, not a car) |
+| `resonix_2026`, `resonix_laid_back_2025`, `resonix_accurate_2023` | ResoNix Sound Solutions (Nick Apicella) REW car house curves, downloaded from their public Drive folder 2026-09-18; measured their way = our way (pink RTA, spatial average around the head, driver's seat). ~+10 dB bass, 2-3 kHz dip. See `docs/targets.md` |
+| `dms_lower_bound`, `dms_upper_bound` | two REW bounds read off a screenshot of DMS's car project; source unpublished, reference only |
 
 Sources: HouseCurve (https://housecurve.com/docs/tuning/target_curve),
 AutoEq (MIT, https://github.com/jaakkopasanen/AutoEq).
 
 ## How much authority these car curves carry (checked 2026-09-14)
+
+> **CORRECTED 2026-09-18:** three experimentally determined in-car targets do
+> exist (Olive & Welti, Clark, Binelli & Farina; collected in Toole, JAES 2015,
+> Fig. 15) and are now bundled. None has the headphone target's statistical
+> backing, but the claim below that no in-car target exists was wrong.
 
 Less than the names suggest. HouseCurve's page introduces them only as
 "some additional curves ... for automobiles. These curves have
