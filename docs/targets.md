@@ -83,8 +83,8 @@ screen cannot be applied directly to ours.
 > **OVERTURNED 2026-09-18 (session 6).** The calibrated iMM-6 showed the
 > SoloCast read 4-6 dB HOT above 6 kHz, not 1.5 dB low as inferred below, so
 > the by-ear cuts compensated in the wrong direction. The owner dropped the
-> by-ear overrides; the final profiles are pure fits (`docs/session6_results.md`,
-> `results/final/`). Kept for the record.
+> by-ear overrides; the final profiles are pure fits (`results/final/`).
+> Kept for the record.
 
 On 2026-09-14 the owner tuned bands 11 to 13 by ear on female vocals,
 listening for sibilance and cymbals, and landed on **-4 -4 -2** where the
@@ -104,7 +104,7 @@ microphone correction applied:
 The by-ear result sits between the 1 dB and 2 dB rows, so the ear puts the
 microphone's treble error at roughly 1.5 dB low above 6 kHz. That is the
 same direction and the low end of the magnitude predicted for a cardioid
-used off-axis (`docs/microphone.md`), and it is the first independent check
+used off-axis, and it is the first independent check
 on it.
 
 It cannot separate microphone error from preference, since wanting less

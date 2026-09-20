@@ -70,7 +70,7 @@ class HeadUnitEq:
     @classmethod
     def mazda_like(cls, fs: int = 48000) -> "HeadUnitEq":
         """Centres, Q, dB/step, cut factor and limiter as measured on a 2021
-        Mazda 3 (sessions 1-2, 2026-09-13); see docs/session2_results.md."""
+        Mazda 3 (sessions 1-2, 2026-09-13)."""
         fc = np.array([40, 63, 100, 160, 250, 500, 1000, 1600, 2500, 4000, 6300, 10000, 16000], dtype=float)
         q = np.array([1.7, 2.0, 2.2, 2.5, 2.1, 2.0, 1.8, 1.8, 2.6, 2.1, 2.8, 1.5, 0.75])
         db = np.array([0.84, 0.92, 0.91, 0.95, 0.84, 0.88, 0.80, 0.85, 0.92, 1.01, 0.84, 0.96, 0.92])

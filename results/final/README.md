@@ -19,7 +19,7 @@ are unavailable (Customize EQ replaces them). Measured at Mazda volume 30.
 | Trained listener | `olive2013_room_trained`: trained listeners' preferred room curve (Olive et al. 2013; home room) | 4.06 -> 1.90 dB |
 
 All three are predictions. The method was checked on the previous Neutral
-profile: 1.81 dB measured against 1.93 predicted (`docs/session6_results.md`).
+profile: 1.81 dB measured against 1.93 predicted.
 
 ## What changed and why
 

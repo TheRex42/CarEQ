@@ -389,7 +389,7 @@ amount below 160 Hz and treble tilt above 4 kHz. Three facts decided it:
 - Bands 2 and 3 pin at -9 for every target. The hump exceeds all of them.
 - The treble bands are where the targets disagree most, and also where the
   HyperX SoloCast's response is unknown: no full-band third-party
-  measurement of it exists (`docs/microphone.md`). Car A's -6/-6/-7 there
+  measurement of it exists. Car A's -6/-6/-7 there
   would be a large correction stacked on an unmeasured microphone.
 - The user's own preference was flat mids with a slight bass shelf.
 

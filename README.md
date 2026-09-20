@@ -83,8 +83,7 @@ corrected absolute settings and the change from the current ones.
   0.1 dB (each pass refits from the measured result with `--current`).
 - Real recordings: three identification sessions on a 2021 Mazda 3
   (2026-09-13) gave all 13 bands; the combined model is
-  `results/session3/eq_model.json` (see `docs/session3_results.md`; the
-  mic is discussed in `docs/microphone.md`).
+  `results/session3/eq_model.json`.
 - Band labels: 40, 63, 100, 160, 250, 500, 1k, 1.6k, 2.5k, 4k, 6.3k, 10k,
   16k Hz, from the measured centres. Labels only; every shape is measured.
 

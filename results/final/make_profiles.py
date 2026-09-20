@@ -9,8 +9,7 @@ Warm / Bass-forward set was dropped: Neutral's own target was too bright
 
 Baseline: three moving-microphone pink takes from the occupied driver's seat,
 Dayton iMM-6 with its calibration file, Mazda volume 30, ALC off
-(results/session6/baseline_move_pooled.csv, already calibrated; see
-docs/session6_results.md).
+(results/session6/baseline_move_pooled.csv, already calibrated).
 
 No overrides. Earlier versions set band 1 to +6 and Neutral's bands 11-13 to
 -4 -4 -2 by ear, and applied a +1.5 dB microphone correction inferred from

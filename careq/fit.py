@@ -13,8 +13,8 @@ single-band gain the head unit delivers when several bands are set at once,
 ``cut_factor`` (default 0.93, or the value identify measured) how deep a cut
 is relative to the same boost; both from the 2021 Mazda 3 sessions of
 2026-09-13 (with ALC off two adjacent bands at +9 reach 95-98 % of the sum
-of their single-band curves; with ALC on it was 84 %, see
-docs/session3_results.md). ``max_boost`` caps positive steps separately:
+of their single-band curves; with ALC on it was 84 %). ``max_boost`` caps
+positive steps separately:
 boosts eat digital headroom in the head unit and can hit its limiter on
 loud material, so cuts are preferred where the fit has the choice. Bounded weighted least squares gives the continuous solution
 (re-solved until the signs, which pick the cut factor, are stable); rounding

@@ -68,8 +68,8 @@ Key design facts (do not re-derive):
   `careq measure --compare` check catches it (`docs/level.md`).
 - The band model is mic-INDEPENDENT, now measured not just argued: bands 5, 9,
   13 re-identified through a different capsule, converter and polar pattern
-  agree to 0.41-0.52 dB rms (`docs/session5_results.md`).
-- Real-car facts (docs/session3_results.md): Q ~2, 0.85-1.0 dB/step, cuts
+  agree to 0.41-0.52 dB rms.
+- Real-car facts (session 3): Q ~2, 0.85-1.0 dB/step, cuts
   mirror boosts at 93 %, level wanders ~1 dB between files during a session
   (interleave baselines; identify subtracts each run's far-field offset),
   road noise is irrelevant above 31 Hz. ALC must be OFF and the volume
@@ -118,12 +118,9 @@ Key design facts (do not re-derive):
    replaces them). Let the recorder run 3 s past the end. `load_wav` takes
    channel 0 and resamples 44.1k -> 48k.
 6. Docs: `docs/method.md` (what every stage does + how the target was
-   reached), `docs/session{2,3,4,5}_results.md`, `docs/session6_results.md`
-   (latest), `docs/level.md` (volume, compression), `docs/microphone.md`,
-   `docs/distortion.md`, `docs/targets.md`, `docs/rta.md`,
-   `docs/weighting.md`, `docs/parametric.md`, `docs/listening.md`.
-   `session2_results` / `session5_results` carry OVERTURNED banners where
-   they were wrong; read the banner. Committable results live in
+   reached), `docs/level.md` (volume, compression), `docs/distortion.md`,
+   `docs/targets.md`, `docs/rta.md`, `docs/weighting.md`,
+   `docs/parametric.md`, `docs/listening.md`. Committable results live in
    `results/<session>/`.
 
 ## Roadmap
@@ -145,8 +142,7 @@ rms). Calibrated moving-mic baseline, all three voicings refitted with NO
 by-ear overrides (the old mic read 4-6 dB hot above 6 kHz, so the by-ear
 treble cuts were wrong-way), boosts capped at +4. Neutral
 `+4 -9 -9 +1 -2 +4 -2 -7 0 +4 -2 +3 +4` verified: predicted 1.93, measured
-1.81 dB from 4.30 flat; pass 2 would gain 0.16 dB, so stopped. Write-up
-`docs/session6_results.md`.
+1.81 dB from 4.30 flat; pass 2 would gain 0.16 dB, so stopped.
 
 **Done (2026-09-18), targets revised after listening.** Neutral was too
 bright: its own target (treble -2 dB at 20 kHz) was the fault, not the

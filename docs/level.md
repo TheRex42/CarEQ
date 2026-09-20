@@ -71,8 +71,8 @@ Measured 2026-09-17: volume 25 read about 55 and volume 50 about 75 on a
 browser SPL meter, so roughly 0.8 dB per step through that range.
 
 **Treat the absolute numbers as worthless.** That meter used the phone's
-built-in microphone, which carries a +13 dB resonance in the top octaves
-(`docs/microphone.md`). Pink noise puts real energy up there, so a broadband
+built-in microphone, which carries a +13 dB resonance in the top octaves.
+Pink noise puts real energy up there, so a broadband
 reading through it is inflated by several dB, and a browser meter has no
 per-model calibration to remove it. The 20 dB *span* between the two volumes
 is probably about right, since the same error applies at both, and that is
