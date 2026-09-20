@@ -42,6 +42,15 @@ Key design facts (do not re-derive):
   barely affects 1/3-oct magnitude anyway (<0.5 dB at 100 ppm).
 - Basis_k = 10log10(smooth(P_k) / smooth(P_baseline)), power-smoothed first;
   this is exactly what the fit adds to the smoothed baseline.
+- The model is magnitude-only, and that is correct, not a shortcut: the bands
+  are CASCADED, so their transfer functions multiply and dB magnitudes add
+  exactly whatever the phase does. Measured 2026-09-20: the EQ is
+  indistinguishable from minimum phase where the measurement can decide
+  (band 5 excess phase 0.8 deg rms against a 2.2 deg control floor; band 9
+  10.7 against 11.7; group delay 3.24 ms measured vs 3.15 predicted at
+  250 Hz). Bands 1 and 13 are undecidable with the current stimulus. So EQ
+  phase shift is the minimum-phase companion of the magnitude change, not a
+  side effect to trade off. See `docs/minphase.md`.
 - identify subtracts each run's broadband offset vs baseline (measured >1.5
   oct from the peak) and flags it above 0.75 dB (volume / gain / mic moved).
 - Fit: bounded weighted LSQ with free level offset, weights 1.0 in
@@ -120,8 +129,8 @@ Key design facts (do not re-derive):
 6. Docs: `docs/method.md` (what every stage does + how the target was
    reached), `docs/level.md` (volume, compression), `docs/distortion.md`,
    `docs/targets.md`, `docs/rta.md`, `docs/weighting.md`,
-   `docs/parametric.md`, `docs/listening.md`. Committable results live in
-   `results/<session>/`.
+   `docs/parametric.md`, `docs/listening.md`, `docs/minphase.md`.
+   Committable results live in `results/<session>/`.
 
 ## Roadmap
 
