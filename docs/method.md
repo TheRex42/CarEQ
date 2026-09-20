@@ -470,36 +470,65 @@ one-step scatter.
 
 ## What remains, and why
 
-Measured in the car with the pass-1 settings, the two weightings put the
-result at 2.73 dB equal-per-octave and 1.79 dB by auditory bandwidth before
-EQ, 2.47 and 1.56 after. The three bundled voicings land at 2.52 to 2.66
-log-uniform and 1.87 to 1.98 ERB-weighted.
+Updated 2026-09-20 to the session 6 numbers. These are **measured**, not
+predicted: the calibrated moving-mic baseline against the same car recorded
+again with the verified Neutral settings in place
+(`results/session6/baseline_move_pooled.csv` and `verify_pooled.csv`, target
+`mazda_neutral`, boosts capped at +4). Overall 4.30 -> 1.81 dB log-uniform
+and 3.62 -> 1.56 ERB-weighted. Each region carries one global level offset,
+not its own, so the rows add up to the total. Reproduce with
+`.venv/bin/python results/session6/region_breakdown.py`.
 
-| region | factory | after EQ |
-|---|---|---|
-| 60-120 Hz | 8.9 dB | 1.1 dB |
-| 120-250 Hz | 4.0 | 2.4 |
-| 250 Hz-1 kHz | 3.1 | 1.5 |
-| 1-4 kHz | 2.3 | 1.6 |
-| 4-16 kHz | 1.7 | 1.4 |
+| region | flat | after EQ | gained | share of what remains |
+|---|---|---|---|---|
+| 20-50 Hz | 7.13 dB | **5.35** | +1.78 | **33 %** |
+| 50-120 Hz | 7.09 | 0.92 | +6.17 | 4 % |
+| 120-300 Hz | 3.02 | 1.96 | +1.06 | 18 % |
+| 300 Hz-1 kHz | 3.51 | 1.44 | +2.07 | 13 % |
+| 1-1.6 kHz | 2.97 | 1.05 | +1.92 | 3 % |
+| 1.6-4 kHz | 3.44 | 1.64 | +1.80 | 13 % |
+| 4-10 kHz | 3.11 | 1.54 | +1.57 | 11 % |
+| 10-20 kHz | 4.28 | 1.46 | +2.81 | 4 % |
 
-Above 250 Hz the factory tuning was already within about 3 dB of every car
-target and the EQ improved it by roughly a decibel: a competent OEM voicing,
-with the caveat that the region above 4 kHz is measured through an
-uncalibrated microphone. Below 250 Hz it was not tuned at all in any
-meaningful sense; the +14 dB hump is the cabin, and removing 8 dB of it was
-the single largest improvement of the exercise.
+**A third of everything left is below 50 Hz**, and it is the one region the
+EQ barely moved: 7.13 to 5.35 dB, against 7.09 to 0.92 one octave up. Band 1
+is at the rail and the doors are 10 dB down by 48 Hz, so there is nothing to
+boost. No equaliser reaches this; it is the subwoofer item on the roadmap,
+and it is worth more than every other limitation combined.
 
-The residual splits roughly one third filter-shape cost (fixed Q about 2 at
-two-thirds-octave spacing cannot reach the 2 kHz feature sitting between
-bands 8 and 9) and two thirds things no equaliser fixes: an interference
-null at 160 Hz that cannot be filled by adding power, and the speakers'
-physical roll-off below 50 Hz. A parametric EQ with the same +-9 dB range
-would leave most of it.
+**The 50-120 Hz hump is the method's clearest success.** 6.17 dB removed,
+and it now contributes 4 % of the residual. That is the cabin gain, and it
+is what the sliders are genuinely good at: a broad feature sitting where
+bands 2 and 3 are.
 
-Three voicings were then bundled (`mazda_neutral`, `mazda_warm`,
-`mazda_bass`) differing only along the two axes the data says matter, for
-listening tests that measurement cannot settle.
+**120-300 Hz is now second at 18 %.** The 160 Hz dip is the bulk of it, and
+it is an interference null that cannot be filled by adding power (see the
+door-sealing item: the cause is not established).
+
+**1.6-4 kHz is 13 %, and it is the least repeatable region on the car.**
+Position-to-position scatter there is 2.2 dB (`docs/parametric.md`), which is
+larger than the 1.64 dB the fit leaves, so no single setting does better
+everywhere: the door woofer and tweeter sum with phase and the sum moves with
+your head. The fixed band centres also miss it, with a gap between band 8 at
+1.6 kHz and band 9 at 2.5 kHz; free filter placement takes 2-4 kHz to 0.20 dB
+on one baseline, though part of that is chasing ripple that changes between
+seats. Note this is a *crossover* limitation, not a phase-response one: the
+EQ itself is indistinguishable from minimum phase (`docs/minphase.md`), and
+because it sits upstream of the passive crossover it scales both drivers
+together and cannot change their relative phase. It can raise the level at a
+summation dip; it cannot make the dip sit still across seats.
+
+**The treble numbers are new, and the old ones were wrong.** This table
+previously showed 4-16 kHz going 1.7 -> 1.4 dB, measured through the
+uncalibrated SoloCast, which read 4-6 dB hot above 6 kHz and therefore
+understated both the error and the correction. Through the calibrated iMM-6
+the same region is 3.11 -> 1.54 dB at 4-10 kHz and 4.28 -> 1.46 at 10-20 kHz.
+
+For history: the session 4 pass, through the uncalibrated microphone and
+against the superseded `mazda_neutral` target, measured 4.54 -> 2.73 dB
+log-uniform with a predicted 2.64. The method's accuracy held across both
+(session 6 predicted 1.93 against 1.81 measured); what changed was the
+microphone.
 
 ## Identification could be a third of the work
 
