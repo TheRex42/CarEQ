@@ -1,7 +1,7 @@
-# careq - tune a car head unit's graphic EQ with a phone mic
+# careq - tune a car head unit's graphic EQ with a calibrated
 
 Phase 0 (desktop Python). Measures the car + head-unit EQ with exponential
-sine sweeps played from a USB stick and recorded on a phone, identifies the
+sine sweeps played from a USB stick and recorded, identifies the
 shape and dB/step of every EQ band by system identification, and fits integer
 band settings toward a target curve.
 
