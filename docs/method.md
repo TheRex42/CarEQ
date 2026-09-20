@@ -158,6 +158,48 @@ else: the volume knob, recorder gain, or the car's slow level drift.
 from the band's peak and subtracts it, and warns above 0.75 dB. Without this
 the fit would believe each band lifts everything.
 
+**Known limitation: out-of-band basis content is not trustworthy.** Level
+correction removes a *broadband* offset between the two recordings. It
+cannot remove a change in the response's *shape*, and the bases keep
+whatever shape difference was there. Plotted, this shows up as dips far from
+a band's own centre: bands 1, 2, 3 and 13 all have excursions of -1.6 to
+-3.2 dB around 1.7-1.9 kHz and 4.4-4.5 kHz. None of them is real. A peaking
+biquad centred at 40 Hz has no response five octaves up.
+
+Measured on band 1 (2026-09-20), recomputing its basis against each of
+session 2's six baselines and changing nothing else: the band's own peak at
+40 Hz is stable to 0.85 dB, while the 1723 Hz "dip" swings from -3.72 to
+-0.49 dB depending only on which baseline it is compared against, and
+correlates at r = +0.76 with how the mid-band level sat in that basis. The
+spread across baselines by region is 0.85 dB at 30-60 Hz, 1.42 at
+200 Hz-1 kHz, **2.42 at 1.5-2.5 kHz**, 1.57 at 4-5 kHz and 0.81 at
+8-16 kHz: the two worst regions are exactly where the dips are.
+
+The instability belongs to the frequency region, not to the band. Band 8,
+whose real centre *is* 1.6 kHz, shows the same 2.41 dB spread across the
+same baselines. That is the door woofer/tweeter crossover region, where two
+drivers sum with phase and a centimetre of microphone movement swings the
+sum; it is the same region that varies +-1 dB between recordings elsewhere
+in these notes, and the same region where `docs/minphase.md` finds both the
+EQ and its baseline-vs-baseline control showing matched phase scatter. It is
+not ALC: bands 1, 2 and 13 come from session 2 with ALC on, but band 3 comes
+from session 3 with ALC off and has the deepest dip of the four.
+
+The effect on a fit is real but small. Tapering every basis to zero beyond
++-1.5 octaves of its measured centre moves four to six mid and treble bands
+by one step each and improves the predicted residual by 0.11-0.19 dB
+(`mazda_by_ear` 1.878 -> 1.718, `olive_welti_car` 2.016 -> 1.904,
+`olive2013_room_trained` 1.902 -> 1.717). The bass bands never move: they
+are pinned at the rails either way. That is the same order as the ERB
+weighting difference, which is inside the method's own scatter.
+
+The model is left as measured. Tapering would mean asserting the filters are
+biquads outside the region where they were measured, and the principle here
+is that bases are measured, never assumed -- even when the assumption is a
+good one, and the peaking-filter residuals of 0.2-0.8 dB say it is. Treat
+basis values more than about 1.5 octaves from a band's centre as noise when
+reading the plots.
+
 **Cut factor.** A run at -9 yields `notes["cut_factor"]`, the least-squares
 ratio of the measured cut to the negated boost near the peak. Measured 0.93
 on this car for two different bands.
@@ -504,6 +546,13 @@ one.
 - ~~The Bass tone control~~ is not available: selecting Customize EQ
   replaces Bass and Treble on this head unit, so the 13 sliders are the
   only gain there is. The residual bass hump is permanent.
+- **Out-of-band basis artefacts.** Bases carry 1.6-3.2 dB of spurious
+  structure at 1.5-2.5 kHz and 4-5 kHz, from baseline shape drift rather
+  than from the filters (see Identification above). A `--taper-bases`
+  option, zeroing each basis beyond +-1.5 octaves of its centre, would
+  remove it and gain about 0.16 dB, at the cost of assuming the filter form
+  outside the measured region. Not implemented; the alternative fix is
+  interleaving baselines more tightly during identification.
 - **An unexplained level jump:** the verification recordings were 18.6 dB
   louder in absolute terms than both flat sets, while the EQ accounts for
   under 1 dB of that. Either the volume or the recorder gain changed. The

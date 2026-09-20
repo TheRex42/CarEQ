@@ -53,6 +53,13 @@ Key design facts (do not re-derive):
   side effect to trade off. See `docs/minphase.md`.
 - identify subtracts each run's broadband offset vs baseline (measured >1.5
   oct from the peak) and flags it above 0.75 dB (volume / gain / mic moved).
+  That removes a broadband offset but NOT a change of shape, so basis values
+  far from a band's own centre are noise: bands 1, 2, 3, 13 carry spurious
+  -1.6 to -3.2 dB dips at 1.7-1.9 kHz and 4.4-4.5 kHz, which move by 3.2 dB
+  if you pick a different baseline. Region, not band (band 8 is just as
+  unstable there); it is the driver crossover. Tapering bases beyond +-1.5
+  oct would gain ~0.16 dB and move 4-6 mid/treble bands one step, but that
+  assumes the filter form; left as measured. See `docs/method.md`.
 - Fit: bounded weighted LSQ with free level offset, weights 1.0 in
   60 Hz-12 kHz tapering to 0.05 at 30 Hz / 16 kHz, then integer coordinate
   descent. Weights sit on a log-uniform grid, i.e. equal weight per octave;
