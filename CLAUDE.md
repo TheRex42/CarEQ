@@ -121,9 +121,9 @@ Key design facts (do not re-derive):
    reached), `docs/session{2,3,4,5}_results.md`, `docs/session6_results.md`
    (latest), `docs/level.md` (volume, compression), `docs/microphone.md`,
    `docs/distortion.md`, `docs/targets.md`, `docs/rta.md`,
-   `docs/weighting.md`, `docs/parametric.md`, `docs/listening.md`. Older plan
-   files and `session2_results` / `session5_results` carry OVERTURNED banners
-   where they were wrong; read the banner. Committable results live in
+   `docs/weighting.md`, `docs/parametric.md`, `docs/listening.md`.
+   `session2_results` / `session5_results` carry OVERTURNED banners where
+   they were wrong; read the banner. Committable results live in
    `results/<session>/`.
 
 ## Roadmap

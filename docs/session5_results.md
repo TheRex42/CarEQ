@@ -19,7 +19,7 @@
 >
 > Plot: `results/session5/band_confirmation.png`. Numbers:
 > `results/session5/band_confirmation.json`. `results/session3/eq_model.json`
-> stands unchanged. Next is `docs/session6_plan.md`.
+> stands unchanged. Next is session 6.
 
 Seven files in `Recordings/Session_5_cal_mic/`, recorded with the Dayton
 iMM-6 through an Apple USB-C dongle into the phone. Calibration file
@@ -106,7 +106,7 @@ departure from the plan.
 
 ## Still outstanding
 
-Superseded: see `docs/session6_plan.md`. The volume question below was
+Superseded by session 6. The volume question below was
 settled by recording band 1 at volume 30 (`docs/level.md`), the SoloCast
 comparison was dropped, and what remains is the calibrated baseline.
 

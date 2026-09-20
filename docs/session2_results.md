@@ -134,5 +134,5 @@ milder interaction than the real one, enough for the tests to exercise the
 second pass); `careq fit` has `--gain-scale` (0.87), `--cut-factor` (from the
 model's symmetry run, else 0.93) and `--current` for the iterate pass.
 
-Still to do: session 3 (`docs/session3_plan.md`), mic calibration, then the
+Still to do: session 3, mic calibration, then the
 occupied-seat multi-position tuning baseline at the same volume number.
